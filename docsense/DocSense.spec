@@ -1,16 +1,36 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 a = Analysis(
-    ['start_all.py'],
-    pathex=[],
+    ['start.py'],
+    pathex=['.'],
     binaries=[],
-    datas=[],
-    hiddenimports=['uvicorn', 'fastapi', 'pydantic', 'sentence_transformers', 'torch', 'qdrant_client', 'sqlalchemy'],
+    datas=[
+        ('frontend', 'frontend'),
+        ('app',      'app'),
+        ('indexer',  'indexer'),
+    ],
+    hiddenimports=[
+        'uvicorn', 'uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto',
+        'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto',
+        'uvicorn.lifespan', 'uvicorn.lifespan.off', 'uvicorn.lifespan.on',
+        'fastapi', 'pydantic', 'pydantic_core',
+        'fastembed', 'fastembed.embedding',
+        'qdrant_client',
+        'pymupdf',
+        'docx',
+        'openpyxl',
+        'pptx',
+        'watchdog', 'watchdog.observers', 'watchdog.observers.polling', 'watchdog.events',
+        'app.main', 'app.config', 'app.models',
+        'app.routes.search', 'app.routes.index',
+        'app.services.embedder', 'app.services.fts', 'app.services.qdrant_store',
+        'indexer.extractor', 'indexer.pipeline', 'indexer.watcher',
+        'multiprocessing', 'sqlite3', 'httpx',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['torch', 'sentence_transformers', 'tensorflow', 'sklearn'],
     noarchive=False,
     optimize=0,
 )

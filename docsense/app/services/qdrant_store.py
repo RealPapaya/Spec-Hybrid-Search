@@ -103,13 +103,15 @@ def search_vector(
     limit: int = 10,
 ) -> List[Dict[str, Any]]:
     """Return top-*limit* nearest chunks by cosine similarity."""
+    from qdrant_client.models import SearchRequest, NamedVector
     client = get_client()
-    hits = client.search(
+    results = client.query_points(
         collection_name=QDRANT_COLLECTION,
-        query_vector=query_vector,
+        query=query_vector,
         limit=limit,
         with_payload=True,
     )
+    hits = results.points
     return [
         {
             "doc_id":     h.payload["doc_id"],

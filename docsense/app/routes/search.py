@@ -33,8 +33,10 @@ def _rrf_fuse(
 ) -> List[dict]:
     """
     Combine two ranked lists with RRF.
-    score = 1/(k + rank_vector) + 1/(k + rank_fts)
-    Higher score = more relevant.
+    Also tracks per-component scores:
+      semantic_score — cosine similarity from vector search (0–1)
+      bm25_score     — normalised BM25 from FTS5 (0–1)
+      score          — RRF fused, normalised so top result = 1.0
     """
     scores: dict[str, dict] = {}
 
@@ -43,17 +45,33 @@ def _rrf_fuse(
 
     for rank, hit in enumerate(vector_hits):
         key = _key(hit)
-        scores.setdefault(key, {**hit, "rrf": 0.0})
+        scores.setdefault(key, {**hit, "rrf": 0.0, "semantic_score": 0.0, "bm25_score": 0.0})
         scores[key]["rrf"] += 1.0 / (k + rank)
+        scores[key]["semantic_score"] = round(float(hit.get("score", 0.0)), 4)
 
-    for rank, hit in enumerate(fts_hits):
-        key = _key(hit)
-        if key not in scores:
-            scores[key] = {**hit, "rrf": 0.0}
-        scores[key]["rrf"] += 1.0 / (k + rank)
+    # Normalise FTS5 rank (negative BM25) to 0–1 range before fusing.
+    # Most-negative rank = best match.  best=1.0, worst=0.0.
+    if fts_hits:
+        best_abs  = abs(fts_hits[0].get("rank",  -1)) or 1.0
+        worst_abs = abs(fts_hits[-1].get("rank", -1)) or 1.0
+        span      = best_abs - worst_abs
+        for rank, hit in enumerate(fts_hits):
+            key = _key(hit)
+            bm25_norm = round((abs(hit.get("rank", 0)) - worst_abs) / span, 4) if span else 1.0
+            if key not in scores:
+                scores[key] = {**hit, "rrf": 0.0, "semantic_score": 0.0, "bm25_score": 0.0}
+            scores[key]["rrf"] += 1.0 / (k + rank)
+            scores[key]["bm25_score"] = bm25_norm
 
     merged = sorted(scores.values(), key=lambda x: x["rrf"], reverse=True)
-    return merged[:limit]
+    top = merged[:limit]
+
+    # Normalise fused score: top result = 1.0
+    max_rrf = top[0]["rrf"] if top else 1.0
+    for r in top:
+        r["score"] = round(r["rrf"] / max_rrf, 4)
+
+    return top
 
 
 # ── Route ─────────────────────────────────────────────────────────────────────
@@ -100,12 +118,18 @@ async def search(
             results = vector_hits[:limit]
 
         else:  # keyword
-            # FTS5 rank is negative (BM25), normalise to 0-1
+            # FTS5 rank is negative BM25; most-negative = best.
+            # Normalise so best result = 1.0, worst = 0.0.
+            # If only one result (or all same), give it 1.0.
             if fts_hits:
-                worst = abs(fts_hits[-1].get("rank", -1)) or 1
+                best_abs  = abs(fts_hits[0].get("rank",  -1)) or 1.0
+                worst_abs = abs(fts_hits[-1].get("rank", -1)) or 1.0
+                span      = best_abs - worst_abs
                 for r in fts_hits:
-                    r["score"] = round(1.0 - abs(r.get("rank", 0)) / worst, 4)
-                    r["mode"]  = "keyword"
+                    bm25 = round((abs(r.get("rank", 0)) - worst_abs) / span, 4) if span else 1.0
+                    r["score"]      = bm25
+                    r["bm25_score"] = bm25
+                    r["mode"]       = "keyword"
             results = fts_hits[:limit]
 
     except Exception as exc:
@@ -124,6 +148,8 @@ async def search(
                 chunk_text=r.get("chunk_text", ""),
                 page=r.get("page"),
                 score=r.get("score", 0.0),
+                bm25_score=r.get("bm25_score", 0.0),
+                semantic_score=r.get("semantic_score", 0.0),
                 mode=r.get("mode", mode),
             )
             for r in results

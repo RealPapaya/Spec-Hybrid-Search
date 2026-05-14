@@ -7,13 +7,15 @@ from pydantic import BaseModel, Field
 # ── Search ────────────────────────────────────────────────────────────────────
 
 class SearchResult(BaseModel):
-    doc_id:     str
-    filename:   str
-    filepath:   str
-    chunk_text: str
-    page:       Optional[int] = None
-    score:      float
-    mode:       str   # "vector" | "keyword" | "hybrid"
+    doc_id:         str
+    filename:       str
+    filepath:       str
+    chunk_text:     str
+    page:           Optional[int] = None
+    score:          float
+    bm25_score:     float = 0.0
+    semantic_score: float = 0.0
+    mode:           str   # "vector" | "keyword" | "hybrid"
 
 
 class SearchResponse(BaseModel):
