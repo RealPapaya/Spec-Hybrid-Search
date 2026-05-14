@@ -216,10 +216,13 @@ def main() -> None:
     _uvicorn_thread = start_uvicorn()
     time.sleep(1.5)   # give uvicorn a moment to bind
 
-    # 5. Open browser
+    # 5. Open browser unless the launcher is handling it.
     url = f"http://localhost:{API_PORT}"
-    logger.info("Opening browser at %s", url)
-    webbrowser.open(url)
+    if os.environ.get("DOCSENSE_OPEN_BROWSER", "1").lower() not in {"0", "false", "no"}:
+        logger.info("Opening browser at %s", url)
+        webbrowser.open(url)
+    else:
+        logger.info("Browser launch is handled by the DocSense launcher.")
 
     # 6. Block until Ctrl-C
     logger.info("DocSense is running. Press Ctrl-C to stop.")

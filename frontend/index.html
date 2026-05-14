@@ -2517,7 +2517,7 @@ function App() {
         <Topbar theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} onOpenPrefs={openPrefs} />
         <SearchRow query={query} setQuery={setQuery} mode={mode} setMode={setMode} onSearch={onSearch} />
         <TopFilters filters={filters} setFilters={setFilters} allResults={allResults} />
-        <div className="main">
+        <div className={`main ${!hasSearched ? 'empty-state' : ''}`}>
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', fontSize: 15 }}>
               <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -2530,7 +2530,7 @@ function App() {
               <div style={{ fontSize: 13, opacity: 0.7 }}>{error}</div>
             </div>
           ) : !hasSearched ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', textAlign: 'center', padding: '0 32px' }}>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', textAlign: 'center', padding: '0 32px' }}>
               <div style={{ fontSize: 48, opacity: 0.3 }}>🔍</div>
               <div style={{ fontSize: 18, fontWeight: 600, opacity: 0.6 }}>{lang === 'zh' ? '開始搜尋您的文件' : 'Search your documents'}</div>
               <div style={{ fontSize: 13, opacity: 0.45, maxWidth: 320 }}>
