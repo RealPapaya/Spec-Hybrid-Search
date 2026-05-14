@@ -31,13 +31,25 @@ def _get_model():
     return _model
 
 
+_EMBED_BATCH = int(os.environ.get("DOCSENSE_EMBED_BATCH", "64"))
+
+
 def embed(texts: List[str]) -> List[List[float]]:
-    """Embed a batch of strings. Returns a list of float vectors."""
+    """Embed a batch of strings. Returns a list of float vectors.
+
+    Processes input in small batches so peak memory stays bounded — naively
+    feeding thousands of chunks to fastembed at once accumulated intermediate
+    ONNX tensors and grew the process to multi-GB on large PDFs.
+    """
     if not texts:
         return []
-    model  = _get_model()
-    result = list(model.embed(texts))
-    return [v.tolist() for v in result]
+    model = _get_model()
+    out: List[List[float]] = []
+    for i in range(0, len(texts), _EMBED_BATCH):
+        batch = texts[i : i + _EMBED_BATCH]
+        for v in model.embed(batch):
+            out.append(v.tolist())
+    return out
 
 
 def embed_query(query: str) -> List[float]:

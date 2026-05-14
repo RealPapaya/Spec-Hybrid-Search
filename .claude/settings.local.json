@@ -23,7 +23,9 @@
       "PowerShell(Start-Sleep -Seconds 8; \\(Invoke-WebRequest -Uri http://localhost:8000/api/status -UseBasicParsing\\).Content)",
       "PowerShell($env:PYTHONIOENCODING='utf-8'; .\\\\.venv\\\\Scripts\\\\python.exe _tmp_index_probe.py 2>&1 | Select-Object -Last 60)",
       "PowerShell(Get-Date -Format \"HH:mm:ss\"; \\(Invoke-WebRequest -Uri http://localhost:8000/api/status -UseBasicParsing\\).Content; \"---\"; Get-Content logs\\\\docsense.err.log -Tail 15)",
-      "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, StartTime | Format-Table -AutoSize)"
+      "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, StartTime | Format-Table -AutoSize)",
+      "PowerShell(Get-Date -Format \"HH:mm:ss\"; \"---STATUS---\"; try { \\(Invoke-WebRequest -Uri http://localhost:8000/api/status -UseBasicParsing -TimeoutSec 3\\).Content } catch { \"API not reachable\" }; \"---WATCHED_DOCS---\"; Get-ChildItem .\\\\watched_docs\\\\ -Recurse | Select-Object FullName, Length | Format-Table -AutoSize)",
+      "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, @{n='CPU\\(s\\)';e={[int]$_.CPU}} | Format-Table -AutoSize)"
     ]
   }
 }
