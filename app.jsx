@@ -453,7 +453,49 @@ function App() {
   const [selectedId, setSelectedId] = useState("r1");
   const [sortKey, setSortKey] = useState("score");
   const [cardMode, setCardMode] = useState("detailed");
-  const [totalMs] = useState(38);
+  const [totalMs, setTotalMs] = useState(0);
+  const [allResults, setAllResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchSearch() {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:8000/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: committedQuery, mode: mode, top_k: 20 })
+        });
+        const data = await res.json();
+        setTotalMs(Math.round(data.took_ms || 0));
+        const mappedResults = (data.results || []).map((r, i) => ({
+          id: r.chunk_id || `r${i}`,
+          score: r.fused_score || 0,
+          bm25: r.bm25_score || 0,
+          semantic: r.semantic_score || 0,
+          spec: r.filename || "Unknown Doc",
+          specShort: r.filename || "Unknown",
+          vendor: "Intel", // Mock vendor to avoid empty filters
+          type: r.file_type ? r.file_type.toUpperCase().replace(".", "") : "DOC",
+          category: "BIOS", // Mock category
+          version: "v1.0",
+          date: "2024-01-01", // Mock date
+          page: r.page_number || 1,
+          section: r.section_title || "Unknown Section",
+          excerpt: r.text || "",
+          highlight: committedQuery.split(" ").filter(w => w.length > 2),
+          context: { before: "", match: r.text || "", after: "" }
+        }));
+        setAllResults(mappedResults);
+      } catch (err) {
+        console.error("Search failed:", err);
+        setAllResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSearch();
+  }, [committedQuery, mode]);
 
   // Tweaks state — useTweaks returns [tweaks, setTweak]
   const tweaksHook = window.useTweaks ? window.useTweaks({
@@ -478,8 +520,6 @@ function App() {
     r.dataset.card = tweaks.cardMode || cardMode;
     r.dataset.highlight = tweaks.highlight || "yellow";
   }, [theme, tweaks, cardMode]);
-
-  const allResults = window.SPEC_DATA.results;
   const filtered = useMemo(() => {
     let rs = allResults.filter((r) => {
       if (filters.vendor.length && !filters.vendor.includes(r.vendor)) return false;

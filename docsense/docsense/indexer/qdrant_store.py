@@ -59,7 +59,7 @@ class QdrantStore:
 
     def __init__(self) -> None:
         settings = get_settings()
-        self._client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+        self._client = QdrantClient(path="./qdrant_data")
         self._collection = settings.qdrant_collection
         self._dim = settings.embedding_dim
         self._ensure_collection()
