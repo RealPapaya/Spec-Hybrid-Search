@@ -25,7 +25,13 @@
       "PowerShell(Get-Date -Format \"HH:mm:ss\"; \\(Invoke-WebRequest -Uri http://localhost:8000/api/status -UseBasicParsing\\).Content; \"---\"; Get-Content logs\\\\docsense.err.log -Tail 15)",
       "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, StartTime | Format-Table -AutoSize)",
       "PowerShell(Get-Date -Format \"HH:mm:ss\"; \"---STATUS---\"; try { \\(Invoke-WebRequest -Uri http://localhost:8000/api/status -UseBasicParsing -TimeoutSec 3\\).Content } catch { \"API not reachable\" }; \"---WATCHED_DOCS---\"; Get-ChildItem .\\\\watched_docs\\\\ -Recurse | Select-Object FullName, Length | Format-Table -AutoSize)",
-      "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, @{n='CPU\\(s\\)';e={[int]$_.CPU}} | Format-Table -AutoSize)"
+      "PowerShell(Get-Process python,qdrant -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='MemMB';e={[int]\\($_.WorkingSet64/1MB\\)}}, @{n='CPU\\(s\\)';e={[int]$_.CPU}} | Format-Table -AutoSize)",
+      "Bash(.venv/Scripts/python.exe -c \"from app.routes import index as r; print\\('ok:', [\\(rt.path, rt.methods\\) for rt in r.router.routes]\\)\")",
+      "Bash(.venv/Scripts/python.exe -m ruff check app/routes/index.py)",
+      "Bash(.venv/Scripts/python.exe -m py_compile app/routes/index.py)",
+      "Bash(curl -s \"http://localhost:8000/api/search?q=bios&mode=hybrid&limit=1\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); r=d['results'][0]; print\\('doc_id:', repr\\(r['doc_id']\\)\\); print\\('filepath:', repr\\(r['filepath']\\)\\); print\\('filename:', repr\\(r['filename']\\)\\)\")",
+      "Bash(curl -s \"http://localhost:8000/api/file/4d554a50b3e01641\")"
     ]
   }
 }
