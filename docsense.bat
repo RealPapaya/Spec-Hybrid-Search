@@ -252,7 +252,7 @@ echo.
 echo   Stopping services on ports 8000 and 6333...
 call :KILL_PORTS
 echo   Waiting for ports to release...
-timeout /t 3 >nul
+call :WAIT_FOR_PORTS_FREE
 echo   Starting DocSense...
 call :START_BACKGROUND
 if errorlevel 1 (
@@ -284,6 +284,25 @@ goto :MENU
 if not exist "%DIR%logs\" mkdir "%DIR%logs"
 powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%DIR%docsense_start_hidden.ps1" -PythonPath "%PY%" -ScriptPath "%DIR%start.py" -WorkDir "%DIR%." -LogPath "%DIR%logs\docsense.log"
 exit /b %errorlevel%
+
+:: =============================================================================
+:: SUBROUTINE: Wait until ports 8000 and 6333 are fully released
+:: =============================================================================
+:WAIT_FOR_PORTS_FREE
+for /l %%i in (1,1,20) do (
+    netstat -ano 2>nul | findstr ":8000 " | findstr "LISTENING" >nul
+    if not errorlevel 1 (
+        timeout /t 1 >nul
+    ) else (
+        netstat -ano 2>nul | findstr ":6333 " | findstr "LISTENING" >nul
+        if not errorlevel 1 (
+            timeout /t 1 >nul
+        ) else (
+            exit /b 0
+        )
+    )
+)
+exit /b 0
 
 :: =============================================================================
 :: SUBROUTINE: Wait until the API port is ready

@@ -88,3 +88,14 @@ Key constants:
 | `POST` | `/api/index` | Trigger manual re-index of `watched_docs/` |
 | `GET` | `/api/status` | Index statistics |
 | `GET` | `/docs` | Swagger / OpenAPI UI |
+
+## Agent Working Rules
+
+Use the `karpathy-guidelines` skill for non-trivial coding, review, and refactor tasks in this repo.
+
+DocSense-specific success criteria:
+- Keep changes surgical: preserve the offline-first, no-Docker, no-cloud design.
+- Prefer existing modules and patterns in `app/`, `indexer/`, and `frontend/` over new abstractions.
+- Verify backend changes with `pytest` when tests exist, or with the narrowest runnable check for the touched path.
+- Verify formatting/lint-sensitive Python changes with `ruff check app indexer` when practical.
+- Do not delete or rewrite user data directories such as `watched_docs/`, `db/`, `qdrant_data/`, `qdrant_bin/`, `snapshots/`, or `logs/` unless explicitly requested.

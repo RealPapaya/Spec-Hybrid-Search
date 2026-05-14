@@ -3,10 +3,13 @@ Qdrant vector store — connects to the standalone binary via HTTP.
 No Docker, no gRPC (pure HTTP mode).
 """
 from __future__ import annotations
+import logging
 from typing import List, Dict, Any
 import uuid
 
 from qdrant_client import QdrantClient
+
+logger = logging.getLogger(__name__)
 from qdrant_client.models import (
     Distance,
     VectorParams,
@@ -102,16 +105,24 @@ def search_vector(
     query_vector: List[float],
     limit: int = 10,
 ) -> List[Dict[str, Any]]:
-    """Return top-*limit* nearest chunks by cosine similarity."""
-    from qdrant_client.models import SearchRequest, NamedVector
-    client = get_client()
-    results = client.query_points(
-        collection_name=QDRANT_COLLECTION,
-        query=query_vector,
-        limit=limit,
-        with_payload=True,
-    )
-    hits = results.points
+    """Return top-*limit* nearest chunks by cosine similarity.
+
+    Returns an empty list if Qdrant is unreachable so that hybrid search can
+    gracefully degrade to keyword-only.
+    """
+    try:
+        client = get_client()
+        results = client.query_points(
+            collection_name=QDRANT_COLLECTION,
+            query=query_vector,
+            limit=limit,
+            with_payload=True,
+        )
+        hits = results.points
+    except Exception as exc:
+        logger.warning("Qdrant vector search failed: %s", exc)
+        return []
+
     return [
         {
             "doc_id":     h.payload["doc_id"],

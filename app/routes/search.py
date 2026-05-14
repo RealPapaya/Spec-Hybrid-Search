@@ -99,17 +99,14 @@ async def search(
 
         if mode in {"hybrid", "keyword"}:
             fts_hits = search_fts(q, limit=limit * 2)
-            # Normalise fts field name
-            for h in fts_hits:
-                h.setdefault("chunk_text", h.pop("chunk_text", ""))
         else:
             fts_hits = []
 
         if mode == "hybrid":
             raw = _rrf_fuse(vector_hits, fts_hits, limit=limit)
             for r in raw:
-                r["score"] = round(r.pop("rrf"), 4)
-                r["mode"]  = "hybrid"
+                r.pop("rrf", None)
+                r["mode"] = "hybrid"
             results = raw
 
         elif mode == "vector":

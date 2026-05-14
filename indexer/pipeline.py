@@ -7,6 +7,7 @@ re-indexing cleanly replaces the old vectors and metadata.
 from __future__ import annotations
 import hashlib
 import logging
+import threading
 from pathlib import Path
 from typing import Tuple
 
@@ -19,9 +20,26 @@ from app.services.fts import (
     insert_chunks,
     delete_document,
     get_document_by_path,
+    get_all_documents_mtimes,
 )
 
 logger = logging.getLogger(__name__)
+
+
+# Per-path locks prevent concurrent index_file() on the same document, which
+# would otherwise race on SQLite + Qdrant writes and (for large PDFs) blow up
+# memory by running multiple embed() passes in parallel.
+_path_locks: dict[str, threading.Lock] = {}
+_path_locks_guard = threading.Lock()
+
+
+def _lock_for(filepath: str) -> threading.Lock:
+    with _path_locks_guard:
+        lock = _path_locks.get(filepath)
+        if lock is None:
+            lock = threading.Lock()
+            _path_locks[filepath] = lock
+        return lock
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -33,9 +51,15 @@ def _doc_id(filepath: str) -> str:
 
 # ── Core indexing function ────────────────────────────────────────────────────
 
-def index_file(path: Path) -> Tuple[bool, str]:
+def index_file(path: Path, known_mtime: float | None = None) -> Tuple[bool, str]:
     """
     Index a single file.
+
+    Parameters
+    ----------
+    known_mtime : float | None
+        If supplied, treated as the currently-indexed mtime for *path*
+        (skips the SQLite SELECT). Used by index_all for batched skip-checks.
 
     Returns
     -------
@@ -50,16 +74,28 @@ def index_file(path: Path) -> Tuple[bool, str]:
     filepath = str(path)
     doc_id   = _doc_id(filepath)
 
-    # Skip if already indexed and unmodified
-    existing = get_document_by_path(filepath)
-    if existing:
+    # Skip if already indexed and unmodified.
+    # Prefer the caller-supplied mtime to avoid a per-file DB round-trip.
+    existing_mtime: float | None
+    if known_mtime is not None:
+        existing_mtime = known_mtime
+    else:
+        existing = get_document_by_path(filepath)
+        existing_mtime = existing["modified_at"] if existing else None
+
+    if existing_mtime is not None:
         try:
             mtime = path.stat().st_mtime
-            if abs(existing["modified_at"] - mtime) < 1.0:
+            if abs(existing_mtime - mtime) < 1.0:
                 logger.debug("Skipping (unchanged): %s", path.name)
                 return False, "skipped"
         except OSError:
             pass
+
+    lock = _lock_for(filepath)
+    if not lock.acquire(blocking=False):
+        logger.info("Skipping (already indexing): %s", path.name)
+        return False, "busy"
 
     logger.info("Indexing: %s", path.name)
     try:
@@ -97,21 +133,30 @@ def index_file(path: Path) -> Tuple[bool, str]:
     except Exception as exc:
         logger.exception("Failed to index %s: %s", path.name, exc)
         return False, f"error:{exc}"
+    finally:
+        lock.release()
 
 
 def index_all(directory: Path | None = None) -> Tuple[int, int]:
     """
     Index all supported documents in *directory* (default: WATCHED_DOCS_DIR).
 
+    Pre-loads all known {filepath: modified_at} in a single SQL query so the
+    common "everything is up-to-date" case avoids N database round-trips.
+
     Returns (files_indexed, files_skipped).
     """
     directory = Path(directory or WATCHED_DOCS_DIR)
+    mtime_cache = get_all_documents_mtimes()
+
     indexed = skipped = 0
-    for path in sorted(directory.rglob("*")):
-        if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS:
-            ok, reason = index_file(path)
-            if ok:
-                indexed += 1
-            else:
-                skipped += 1
+    for path in directory.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            continue
+        known = mtime_cache.get(str(path.resolve()))
+        ok, _reason = index_file(path, known_mtime=known)
+        if ok:
+            indexed += 1
+        else:
+            skipped += 1
     return indexed, skipped

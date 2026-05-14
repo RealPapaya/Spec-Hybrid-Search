@@ -139,19 +139,25 @@ def ensure_qdrant_binary() -> None:
 
 def start_qdrant() -> subprocess.Popen:
     QDRANT_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    
-    # Newer Qdrant versions prefer environment variables or a config file over CLI flags
+
+    # Newer Qdrant versions prefer environment variables over CLI flags
     env = os.environ.copy()
     env["QDRANT__STORAGE__STORAGE_PATH"] = str(QDRANT_DATA_DIR)
-    env["QDRANT__SERVICE__HTTP_PORT"] = str(QDRANT_PORT)
-    env["QDRANT__SERVICE__HOST"] = QDRANT_HOST
-    
+    env["QDRANT__SERVICE__HTTP_PORT"]    = str(QDRANT_PORT)
+    env["QDRANT__SERVICE__HOST"]         = QDRANT_HOST
+    # Qdrant defaults to verbose telemetry; disabling shaves ~100 ms off start.
+    env.setdefault("QDRANT__TELEMETRY_DISABLED", "true")
+
+    log_dir = PROJECT_ROOT / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    qdrant_log = open(log_dir / "qdrant.log", "ab")
+
     cmd = [str(QDRANT_BIN_PATH)]
     logger.info("Starting Qdrant: %s", " ".join(cmd))
     proc = subprocess.Popen(
         cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=qdrant_log,
+        stderr=qdrant_log,
         env=env,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0,
     )
@@ -162,15 +168,20 @@ def wait_for_qdrant(timeout: int = 30) -> None:
     url = f"http://{QDRANT_HOST}:{QDRANT_PORT}/healthz"
     deadline = time.time() + timeout
     logger.info("Waiting for Qdrant to be ready …")
+    # Fast initial probes; back off to 0.25 s once the first second has elapsed.
+    poll = 0.05
+    started = time.time()
     while time.time() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=2) as r:
+            with urllib.request.urlopen(url, timeout=1) as r:
                 if r.status == 200:
-                    logger.info("Qdrant is ready.")
+                    logger.info("Qdrant ready in %.2fs", time.time() - started)
                     return
         except Exception:
             pass
-        time.sleep(0.5)
+        time.sleep(poll)
+        if time.time() - started > 1.0:
+            poll = 0.25
     raise RuntimeError(f"Qdrant did not become healthy within {timeout}s")
 
 
@@ -191,6 +202,22 @@ def start_uvicorn() -> threading.Thread:
     thread = threading.Thread(target=server.run, daemon=True, name="uvicorn")
     thread.start()
     return thread
+
+
+def _wait_for_api(url: str, timeout: int = 15) -> None:
+    """Block until the FastAPI port answers (lifespan finished + bound)."""
+    deadline = time.time() + timeout
+    started  = time.time()
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=1) as r:
+                if r.status < 500:
+                    logger.info("API ready in %.2fs", time.time() - started)
+                    return
+        except Exception:
+            pass
+        time.sleep(0.1)
+    logger.warning("API did not become ready within %ds — opening browser anyway", timeout)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -214,13 +241,15 @@ def main() -> None:
     # 4. Start Uvicorn in background thread
     logger.info("Starting DocSense API on http://localhost:%d …", API_PORT)
     _uvicorn_thread = start_uvicorn()
-    time.sleep(1.5)   # give uvicorn a moment to bind
+
+    # Poll the API port until it accepts connections (typically <300 ms).
+    api_url = f"http://localhost:{API_PORT}"
+    _wait_for_api(api_url, timeout=15)
 
     # 5. Open browser unless the launcher is handling it.
-    url = f"http://localhost:{API_PORT}"
     if os.environ.get("DOCSENSE_OPEN_BROWSER", "1").lower() not in {"0", "false", "no"}:
-        logger.info("Opening browser at %s", url)
-        webbrowser.open(url)
+        logger.info("Opening browser at %s", api_url)
+        webbrowser.open(api_url)
     else:
         logger.info("Browser launch is handled by the DocSense launcher.")
 

@@ -3,15 +3,21 @@ FastAPI application factory.
 
 Startup sequence
 ----------------
-1. Ensure DB schema exists (SQLite + FTS5)
-2. Ensure Qdrant collection exists
-3. Run an initial index pass over watched_docs/
-4. Start watchdog observer for live updates
+1. Ensure DB schema exists (SQLite + FTS5)            — sync, fast
+2. Ensure Qdrant collection exists                    — sync, fast
+3. Start watchdog observer for live updates           — sync, fast
+4. Kick off initial index pass on watched_docs/       — BACKGROUND task
+5. Pre-warm the ONNX embedder                         — BACKGROUND task
+
+Steps 4 and 5 run in a background thread so uvicorn starts accepting
+requests immediately. Index progress can be polled via /api/status.
 
 The frontend is served as static files from /frontend → mounted at /.
 """
 from __future__ import annotations
+import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -24,7 +30,7 @@ from app.routes import index  as index_router
 from app.services.fts import init_db
 from app.services.qdrant_store import ensure_collection
 from indexer.pipeline import index_all
-from indexer.watcher import start_watcher
+from indexer.watcher import start_watcher, stop_worker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,33 +40,68 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 _observer = None   # watchdog Observer — kept alive for app lifetime
+_bg_tasks: set[asyncio.Task] = set()
+
+
+def _run_initial_index() -> None:
+    """Run the full index pass; logged so users can see progress in the log."""
+    try:
+        t0 = time.perf_counter()
+        indexed, skipped = index_all()
+        dt = time.perf_counter() - t0
+        logger.info("Startup index: %d indexed, %d skipped in %.2fs", indexed, skipped, dt)
+    except Exception:
+        logger.exception("Startup index failed")
+
+
+def _prewarm_embedder() -> None:
+    """Load the ONNX model into memory so the first search isn't slow."""
+    try:
+        from app.services.embedder import _get_model
+        t0 = time.perf_counter()
+        _get_model()
+        logger.info("Embedder pre-warmed in %.2fs", time.perf_counter() - t0)
+    except Exception:
+        logger.exception("Embedder pre-warm failed")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _observer
 
-    # ── Startup ──────────────────────────────────────────────────────────────
+    # ── Startup (fast path only) ─────────────────────────────────────────────
     logger.info("Initialising database …")
     init_db()
 
     logger.info("Connecting to Qdrant …")
     ensure_collection()
 
-    logger.info("Initial index pass on %s …", WATCHED_DOCS_DIR)
     WATCHED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    indexed, skipped = index_all()
-    logger.info("Startup index: %d indexed, %d skipped", indexed, skipped)
 
     logger.info("Starting file watcher …")
     _observer = start_watcher()
+
+    # Schedule heavy work in background so server is ready immediately.
+    loop = asyncio.get_running_loop()
+    idx_task = loop.run_in_executor(None, _run_initial_index)
+    warm_task = loop.run_in_executor(None, _prewarm_embedder)
+    _bg_tasks.add(idx_task)
+    _bg_tasks.add(warm_task)
+    logger.info("Server ready. Initial index + embedder warm-up running in background.")
 
     yield   # app is running
 
     # ── Shutdown ─────────────────────────────────────────────────────────────
     if _observer:
-        _observer.stop()
-        _observer.join()
+        try:
+            _observer.stop()
+            _observer.join(timeout=3)
+        except Exception:
+            logger.exception("Error stopping watcher")
+    try:
+        stop_worker()
+    except Exception:
+        logger.exception("Error stopping index worker")
     logger.info("Shutdown complete.")
 
 

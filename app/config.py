@@ -35,8 +35,12 @@ QDRANT_VECTOR_SIZE = 384          # matches BAAI/bge-small-en-v1.5
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"   # ~130 MB, ONNX, fast CPU inference
 
 # ── Chunking ──────────────────────────────────────────────────────────────────
-CHUNK_SIZE    = 512   # characters per chunk
-CHUNK_OVERLAP = 64    # character overlap between consecutive chunks
+# 1500 chars ≈ 350-500 tokens — comfortably under bge-small's 512-token limit
+# while giving each chunk enough semantic context. A 6 MB technical PDF chunks
+# to ~2000 pieces (vs ~7000 with the old 512-char setting), so embedding is
+# 3× faster and search ranks fewer candidates.
+CHUNK_SIZE    = 1500
+CHUNK_OVERLAP = 150   # 10% overlap so phrases on chunk boundaries still match
 
 # ── SQLite ────────────────────────────────────────────────────────────────────
 DB_PATH = DB_DIR / "docsense.db"

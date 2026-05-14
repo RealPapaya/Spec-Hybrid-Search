@@ -5,6 +5,7 @@ fastembed uses ONNX Runtime — no PyTorch required.
 The model (~130 MB) is downloaded once on first use and cached by fastembed.
 """
 from __future__ import annotations
+import os
 from typing import List
 
 from app.config import EMBED_MODEL
@@ -12,12 +13,21 @@ from app.config import EMBED_MODEL
 # Module-level singleton — initialised lazily on first call
 _model = None
 
+# Cap ONNX intra/inter-op threads so the embedder doesn't saturate the CPU.
+# Default: half the logical cores (min 1, max 4). Overridable via env var so
+# users can trade indexing speed for system responsiveness.
+_DEFAULT_THREADS = max(1, min(4, (os.cpu_count() or 4) // 2))
+_EMBED_THREADS = int(os.environ.get("DOCSENSE_EMBED_THREADS", _DEFAULT_THREADS))
+
 
 def _get_model():
     global _model
     if _model is None:
         from fastembed import TextEmbedding
-        _model = TextEmbedding(model_name=EMBED_MODEL)
+        _model = TextEmbedding(
+            model_name=EMBED_MODEL,
+            threads=_EMBED_THREADS,
+        )
     return _model
 
 

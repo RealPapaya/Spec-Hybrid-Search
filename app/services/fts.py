@@ -8,13 +8,20 @@ chunks     — one row per text chunk
 chunks_fts — FTS5 virtual table (content= mode, mirroring chunks.text)
 
 FTS5 triggers keep the virtual table in sync automatically.
-Porter stemmer + ASCII tokenizer give decent English recall.
+Trigram tokenizer gives substring-friendly recall for English AND CJK text
+(falls back to unicode61 if trigram is not compiled into SQLite).
 """
 from __future__ import annotations
+import logging
 import sqlite3
 from typing import List, Dict, Any, Optional
 
 from app.config import DB_PATH
+
+logger = logging.getLogger(__name__)
+
+# Bump this when FTS schema / tokenizer changes — triggers a one-time rebuild.
+_FTS_SCHEMA_VERSION = 2
 
 
 # ── Connection factory ────────────────────────────────────────────────────────
@@ -29,6 +36,28 @@ def _conn() -> sqlite3.Connection:
 
 
 # ── Schema bootstrap ──────────────────────────────────────────────────────────
+
+def _create_fts_table(con: sqlite3.Connection) -> str:
+    """Create chunks_fts with trigram tokenizer, falling back to unicode61.
+
+    Returns the tokenizer name that was actually used (for logging).
+    """
+    for tokenizer in ("trigram", "unicode61 remove_diacritics 2"):
+        try:
+            con.execute(
+                f"""CREATE VIRTUAL TABLE chunks_fts USING fts5(
+                        text,
+                        content=chunks,
+                        content_rowid=id,
+                        tokenize='{tokenizer}'
+                    )"""
+            )
+            return tokenizer
+        except sqlite3.OperationalError as exc:
+            logger.warning("FTS5 tokenizer %r unavailable: %s", tokenizer, exc)
+            continue
+    raise RuntimeError("No usable FTS5 tokenizer (tried trigram, unicode61)")
+
 
 def init_db() -> None:
     con = _conn()
@@ -50,14 +79,28 @@ def init_db() -> None:
             text         TEXT    NOT NULL,
             page         INTEGER
         );
+    """)
 
-        CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
-            text,
-            content=chunks,
-            content_rowid=id,
-            tokenize='porter ascii'
-        );
+    current_version = con.execute("PRAGMA user_version").fetchone()[0]
+    fts_exists = con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='chunks_fts'"
+    ).fetchone() is not None
 
+    if not fts_exists:
+        tokenizer = _create_fts_table(con)
+        logger.info("Created chunks_fts with tokenizer=%s", tokenizer)
+    elif current_version < _FTS_SCHEMA_VERSION:
+        logger.info(
+            "FTS schema v%d → v%d: rebuilding chunks_fts with new tokenizer",
+            current_version, _FTS_SCHEMA_VERSION,
+        )
+        con.execute("DROP TABLE chunks_fts")
+        tokenizer = _create_fts_table(con)
+        # Re-populate from the content table (chunks) — does not re-parse documents.
+        con.execute("INSERT INTO chunks_fts(chunks_fts) VALUES ('rebuild')")
+        logger.info("Rebuilt chunks_fts with tokenizer=%s", tokenizer)
+
+    con.executescript("""
         -- Keep FTS5 in sync with chunks
         CREATE TRIGGER IF NOT EXISTS chunks_ai AFTER INSERT ON chunks BEGIN
             INSERT INTO chunks_fts(rowid, text) VALUES (new.id, new.text);
@@ -74,6 +117,8 @@ def init_db() -> None:
             INSERT INTO chunks_fts(rowid, text) VALUES (new.id, new.text);
         END;
     """)
+
+    con.execute(f"PRAGMA user_version = {_FTS_SCHEMA_VERSION}")
     con.commit()
     con.close()
 
@@ -122,29 +167,79 @@ def delete_document(doc_id: str) -> None:
 
 # ── Read operations ───────────────────────────────────────────────────────────
 
+# Trigram FTS5 cannot index n-grams shorter than 3 characters, so queries
+# containing a 1- or 2-char token (e.g. "AI", "中文") must fall back to LIKE.
+_TRIGRAM_MIN = 3
+
+
+def _sanitize_fts_query(tokens: List[str]) -> str:
+    """Wrap each token as a double-quoted FTS5 phrase so operators, special
+    characters, and CJK are treated as literal text. Phrases are AND-ed."""
+    return " ".join('"' + t.replace('"', '""') + '"' for t in tokens)
+
+
+def _like_fallback(tokens: List[str], limit: int) -> List[Dict[str, Any]]:
+    """Substring scan over chunks.text for queries trigram can't index."""
+    where = " AND ".join(["c.text LIKE ?"] * len(tokens))
+    params: list = [f"%{t}%" for t in tokens]
+    params.append(limit)
+    con = _conn()
+    try:
+        rows = con.execute(
+            f"""
+            SELECT c.doc_id, c.chunk_index, c.text AS chunk_text, c.page,
+                   d.filename, d.filepath,
+                   0.0 AS rank
+            FROM   chunks    c
+            JOIN   documents d ON c.doc_id = d.doc_id
+            WHERE  {where}
+            LIMIT  ?
+            """,
+            params,
+        ).fetchall()
+    finally:
+        con.close()
+    return [dict(r) for r in rows]
+
+
 def search_fts(query: str, limit: int = 20) -> List[Dict[str, Any]]:
     """
     Full-text search via FTS5 BM25.
     Returns dicts with doc_id, filename, filepath, chunk_text, page, rank.
+
+    For tokens shorter than the trigram minimum (3 chars) the query degrades
+    to a LIKE substring scan, so 2-char Chinese terms like "中文" still match.
+    Returns an empty list on FTS syntax errors rather than raising.
     """
+    tokens = [t for t in query.split() if t]
+    if not tokens:
+        return []
+
+    if any(len(t) < _TRIGRAM_MIN for t in tokens):
+        return _like_fallback(tokens, limit)
+
+    safe_query = _sanitize_fts_query(tokens)
     con = _conn()
-    # Escape special FTS5 characters to avoid syntax errors
-    safe_query = query.replace('"', '""')
-    rows = con.execute(
-        """
-        SELECT c.doc_id, c.chunk_index, c.text AS chunk_text, c.page,
-               d.filename, d.filepath,
-               rank
-        FROM   chunks_fts
-        JOIN   chunks    c ON chunks_fts.rowid = c.id
-        JOIN   documents d ON c.doc_id = d.doc_id
-        WHERE  chunks_fts MATCH ?
-        ORDER  BY rank
-        LIMIT  ?
-        """,
-        (safe_query, limit),
-    ).fetchall()
-    con.close()
+    try:
+        rows = con.execute(
+            """
+            SELECT c.doc_id, c.chunk_index, c.text AS chunk_text, c.page,
+                   d.filename, d.filepath,
+                   rank
+            FROM   chunks_fts
+            JOIN   chunks    c ON chunks_fts.rowid = c.id
+            JOIN   documents d ON c.doc_id = d.doc_id
+            WHERE  chunks_fts MATCH ?
+            ORDER  BY rank
+            LIMIT  ?
+            """,
+            (safe_query, limit),
+        ).fetchall()
+    except sqlite3.OperationalError as exc:
+        logger.warning("FTS5 query failed for %r (sanitised: %r): %s", query, safe_query, exc)
+        rows = []
+    finally:
+        con.close()
     return [dict(r) for r in rows]
 
 
@@ -155,6 +250,19 @@ def get_document_by_path(filepath: str) -> Optional[Dict[str, Any]]:
     ).fetchone()
     con.close()
     return dict(row) if row else None
+
+
+def get_all_documents_mtimes() -> Dict[str, float]:
+    """Return {filepath: modified_at} for every indexed document.
+
+    Used by index_all() to do skip-checks without one SQL round-trip per file.
+    """
+    con = _conn()
+    rows = con.execute(
+        "SELECT filepath, modified_at FROM documents"
+    ).fetchall()
+    con.close()
+    return {r["filepath"]: r["modified_at"] for r in rows}
 
 
 def get_stats() -> Dict[str, int]:
