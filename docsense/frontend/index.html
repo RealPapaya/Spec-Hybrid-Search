@@ -1,124 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="light" data-layout="sidebar" data-density="balanced" data-accent="indigo" data-typeset="inter-mono" data-card="detailed" data-highlight="yellow">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
   <title>DocSense — Local Document Search</title>
-  <meta name="description" content="Search your local PDF, DOCX, XLSX, and PPTX files instantly with semantic and full-text search." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <meta name="description" content="Search your local PDF, DOCX, XLSX, and PPTX files with semantic and full-text hybrid search." />
+  <meta name="viewport" content="width=1280" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- ── Header ─────────────────────────────────────────────── -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="url(#grad)"/>
-          <path d="M9 8h9l5 5v11H9V8z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
-          <path d="M18 8v5h5" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
-          <path d="M12 17h8M12 20h5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-          <defs>
-            <linearGradient id="grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#6366f1"/>
-              <stop offset="1" stop-color="#8b5cf6"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <span class="logo-text">DocSense</span>
-      </div>
-
-      <div id="status-badge" class="status-badge" title="Index status">
-        <span class="status-dot"></span>
-        <span id="status-text">Loading…</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- ── Hero / Search ──────────────────────────────────────── -->
-  <main class="main">
-    <section class="hero">
-      <h1 class="hero-title">Search your documents</h1>
-      <p class="hero-sub">PDF · DOCX · XLSX · PPTX — semantic + full-text, fully local</p>
-
-      <div class="search-card">
-        <!-- Mode selector -->
-        <div class="mode-tabs" role="radiogroup" aria-label="Search mode">
-          <button class="mode-tab active" id="tab-hybrid"  data-mode="hybrid"  role="radio" aria-checked="true">Hybrid</button>
-          <button class="mode-tab"        id="tab-vector"  data-mode="vector"  role="radio" aria-checked="false">Semantic</button>
-          <button class="mode-tab"        id="tab-keyword" data-mode="keyword" role="radio" aria-checked="false">Keyword</button>
-        </div>
-
-        <!-- Search input -->
-        <div class="search-row">
-          <div class="search-input-wrap">
-            <svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M13.5 13.5 17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            <input
-              id="search-input"
-              class="search-input"
-              type="search"
-              placeholder="Ask anything about your documents…"
-              autocomplete="off"
-              spellcheck="false"
-              aria-label="Search query"
-            />
-            <div id="search-spinner" class="search-spinner" aria-hidden="true"></div>
-          </div>
-        </div>
-
-        <!-- Limit row -->
-        <div class="options-row">
-          <label for="limit-select" class="options-label">Results</label>
-          <select id="limit-select" class="options-select">
-            <option value="5">5</option>
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-
-          <button id="reindex-btn" class="reindex-btn" title="Re-index watched_docs folder">
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M4 10a6 6 0 1 1 1.5 3.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <polyline points="1,10 4,13 7,10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Re-index
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Results ──────────────────────────────────────────── -->
-    <section class="results-section" aria-live="polite">
-      <div id="results-meta" class="results-meta" hidden></div>
-      <ul id="results-list" class="results-list" role="list"></ul>
-      <div id="empty-state" class="empty-state" hidden>
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" opacity=".2"/>
-          <path d="M22 32h20M32 22v20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
-        </svg>
-        <p>No results found.<br/>Try a different query or switch modes.</p>
-      </div>
-    </section>
-
-    <!-- ── Drop hint ─────────────────────────────────────────── -->
-    <div class="drop-hint">
-      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M10 2v11M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-      Drop documents into <code id="watched-path">watched_docs/</code> — they'll be indexed automatically.
-    </div>
-  </main>
-
-  <!-- ── Toast ─────────────────────────────────────────────── -->
-  <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
-
-  <script src="app.js"></script>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <script type="text/babel" src="app.jsx"></script>
 </body>
 </html>

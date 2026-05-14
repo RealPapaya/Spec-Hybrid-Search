@@ -139,17 +139,20 @@ def ensure_qdrant_binary() -> None:
 
 def start_qdrant() -> subprocess.Popen:
     QDRANT_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        str(QDRANT_BIN_PATH),
-        "--storage-path", str(QDRANT_DATA_DIR),
-        "--host",         QDRANT_HOST,
-        "--port",         str(QDRANT_PORT),
-    ]
+    
+    # Newer Qdrant versions prefer environment variables or a config file over CLI flags
+    env = os.environ.copy()
+    env["QDRANT__STORAGE__STORAGE_PATH"] = str(QDRANT_DATA_DIR)
+    env["QDRANT__SERVICE__HTTP_PORT"] = str(QDRANT_PORT)
+    env["QDRANT__SERVICE__HOST"] = QDRANT_HOST
+    
+    cmd = [str(QDRANT_BIN_PATH)]
     logger.info("Starting Qdrant: %s", " ".join(cmd))
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        env=env,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0,
     )
     return proc
