@@ -2,17 +2,28 @@
 Central configuration — all paths and tuneable constants live here.
 Edit this file to change ports, model, chunk size, etc.
 """
+import sys
 import platform
 from pathlib import Path
 
 # ── Directories ───────────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).parent.parent   # docsense/
+# When packaged as a PyInstaller exe, _MEIPASS points to the _internal bundle.
+# User-facing data dirs (watched_docs, db, qdrant_*) must live next to the exe,
+# not inside _internal, so users can find and manage them easily.
+if getattr(sys, "frozen", False):
+    # Running as packaged exe — place user data next to the .exe
+    _EXE_DIR  = Path(sys.executable).parent
+    BASE_DIR  = _EXE_DIR           # user data next to DocSense.exe
+    _INT_DIR  = Path(sys._MEIPASS)  # bundled read-only assets
+else:
+    BASE_DIR  = Path(__file__).parent.parent   # docsense/
+    _INT_DIR  = BASE_DIR
 
 QDRANT_BIN_DIR   = BASE_DIR / "qdrant_bin"
 QDRANT_DATA_DIR  = BASE_DIR / "qdrant_data"
 DB_DIR           = BASE_DIR / "db"
 WATCHED_DOCS_DIR = BASE_DIR / "watched_docs"
-FRONTEND_DIR     = BASE_DIR / "frontend"
+FRONTEND_DIR     = _INT_DIR / "frontend"
 
 # ── Qdrant ────────────────────────────────────────────────────────────────────
 QDRANT_HOST       = "localhost"
