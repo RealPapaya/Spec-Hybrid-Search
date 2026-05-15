@@ -88,14 +88,30 @@ function App() {
         if (!alive) return;
         const hasLocalFile = !!(settings && settings._exists);
         const prefs = settings && settings.prefs && typeof settings.prefs === 'object' ? settings.prefs : {};
-        if (Object.keys(prefs).length) {
+          if (Object.keys(prefs).length) {
           if (prefs.theme) setTheme(prefs.theme);
           if (prefs.lang) setLang(prefs.lang);
           if (prefs.cardMode) setCardMode(prefs.cardMode);
           const nextTweaks = {};
-          ['layout', 'density', 'accent', 'typeset', 'cardMode', 'highlight'].forEach(key => {
+          ['layout', 'density', 'accent', 'fontSans', 'fontMono', 'fontDisplay', 'cardMode', 'highlight'].forEach(key => {
             if (prefs[key]) nextTweaks[key] = prefs[key];
           });
+          // Backward compatibility: migrate old 'typeset' to individual fonts
+          if (prefs.typeset && !prefs.fontSans && !prefs.fontMono && !prefs.fontDisplay) {
+            if (prefs.typeset === 'inter-mono') {
+              nextTweaks.fontSans = 'inter';
+              nextTweaks.fontMono = 'jetbrains-mono';
+              nextTweaks.fontDisplay = 'inter';
+            } else if (prefs.typeset === 'ibm-plex') {
+              nextTweaks.fontSans = 'ibm-plex-sans';
+              nextTweaks.fontMono = 'ibm-plex-mono';
+              nextTweaks.fontDisplay = 'ibm-plex-sans';
+            } else if (prefs.typeset === 'serif-mono') {
+              nextTweaks.fontSans = 'inter';
+              nextTweaks.fontMono = 'jetbrains-mono';
+              nextTweaks.fontDisplay = 'source-serif';
+            }
+          }
           setTweakState(prev => ({ ...prev, ...nextTweaks }));
         }
         if (settings && settings.tags && Array.isArray(settings.tags.customTags)) {
@@ -134,13 +150,15 @@ function App() {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  const [tweaks, setTweakState] = React.useState({
-    layout:    saved.layout    || 'sidebar',
-    density:   saved.density   || 'balanced',
-    accent:    saved.accent    || 'indigo',
-    typeset:   saved.typeset   || 'inter-mono',
-    cardMode:  saved.cardMode  || 'detailed',
-    highlight: saved.highlight || 'yellow',
+        const [tweaks, setTweakState] = React.useState({
+    layout:      saved.layout      || 'sidebar',
+    density:     saved.density     || 'balanced',
+    accent:      saved.accent      || 'indigo',
+    fontSans:    saved.fontSans    || 'inter',
+    fontMono:    saved.fontMono    || 'jetbrains-mono',
+    fontDisplay: saved.fontDisplay || 'inter',
+    cardMode:    saved.cardMode    || 'detailed',
+    highlight:   saved.highlight    || 'yellow',
   });
 
   const setTweak = React.useCallback((keyOrObj, val) => {
@@ -163,17 +181,19 @@ function App() {
     if (settingsLoaded) saveLocalSettingsPatch({ bookmarks });
   }, [bookmarks, settingsLoaded]);
 
-  // Apply all preferences to the document root
+        // Apply all preferences to the document root
   React.useEffect(() => {
     const r = document.documentElement;
-    r.dataset.theme    = theme;
-    r.dataset.layout   = tweaks.layout;
-    r.dataset.density  = tweaks.density;
-    r.dataset.accent   = tweaks.accent;
-    r.dataset.typeset  = tweaks.typeset;
-    r.dataset.card     = tweaks.cardMode;
-    r.dataset.highlight = tweaks.highlight;
-    r.lang             = lang === 'zh' ? 'zh-TW' : 'en';
+    r.dataset.theme       = theme;
+    r.dataset.layout      = tweaks.layout;
+    r.dataset.density     = tweaks.density;
+    r.dataset.accent      = tweaks.accent;
+    r.dataset.fontSans    = tweaks.fontSans;
+    r.dataset.fontMono    = tweaks.fontMono;
+    r.dataset.fontDisplay = tweaks.fontDisplay;
+    r.dataset.card        = tweaks.cardMode;
+    r.dataset.highlight   = tweaks.highlight;
+    r.lang                = lang === 'zh' ? 'zh-TW' : 'en';
   }, [theme, lang, tweaks]);
 
   const allResults = results;
@@ -357,15 +377,39 @@ function App() {
             />
           </TweakSection>
 
-          <TweakSection label={lang === 'zh' ? '字體' : 'Typography'}>
+            <TweakSection label={lang === 'zh' ? '字體' : 'Typography'}>
             <TweakSelect
-              label={lang === 'zh' ? '字型配對' : 'Font pairing'}
-              value={tweaks.typeset}
-              onChange={v => setTweak('typeset', v)}
+              label={lang === 'zh' ? '內文字型 (Sans)' : 'Body font (Sans)'}
+              value={tweaks.fontSans}
+              onChange={v => setTweak('fontSans', v)}
               options={[
-                { value: 'inter-mono', label: 'Inter + JetBrains Mono'     },
-                { value: 'ibm-plex',   label: 'IBM Plex Sans + Plex Mono'  },
-                { value: 'serif-mono', label: 'Source Serif + JetBrains Mono' },
+                { value: 'inter',          label: 'Inter' },
+                { value: 'ibm-plex-sans',  label: 'IBM Plex Sans' },
+                { value: 'jetbrains-mono', label: 'JetBrains Mono' },
+                { value: 'system',         label: lang === 'zh' ? '系統字型' : 'System' },
+              ]}
+            />
+            <TweakSelect
+              label={lang === 'zh' ? '等寬字型 (Mono)' : 'Monospace font'}
+              value={tweaks.fontMono}
+              onChange={v => setTweak('fontMono', v)}
+              options={[
+                { value: 'jetbrains-mono', label: 'JetBrains Mono' },
+                { value: 'ibm-plex-mono',  label: 'IBM Plex Mono' },
+                { value: 'fira-code',      label: 'Fira Code' },
+                { value: 'consolas',       label: 'Consolas' },
+              ]}
+            />
+            <TweakSelect
+              label={lang === 'zh' ? '標題字型 (Display)' : 'Heading font (Display)'}
+              value={tweaks.fontDisplay}
+              onChange={v => setTweak('fontDisplay', v)}
+              options={[
+                { value: 'inter',          label: 'Inter' },
+                { value: 'ibm-plex-sans',  label: 'IBM Plex Sans' },
+                { value: 'source-serif',   label: 'Source Serif 4' },
+                { value: 'jetbrains-mono', label: 'JetBrains Mono' },
+                { value: 'system',         label: lang === 'zh' ? '系統字型' : 'System' },
               ]}
             />
           </TweakSection>

@@ -28,9 +28,9 @@
   --tag-pcisig: #b45309;
   --shadow-panel: 0 1px 0 rgba(0,0,0,0.04);
 
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
   --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
-  --font-display: "Inter", system-ui, sans-serif;
+  --font-display: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
 
   --row-h: 28px;
   --pad-x: 14px;
@@ -93,10 +93,25 @@
 [data-accent="slate"] { --accent: #334155; --accent-soft: #e2e8f0; --bg-selected: #e7eaef; --bg-selected-strong: #d4dae3; }
 [data-accent="slate"][data-theme="dark"] { --accent: #94a3b8; --accent-soft: #1e293b; --bg-selected: #1c2330; --bg-selected-strong: #2a3344; }
 
-/* Type pairing variants */
-[data-typeset="inter-mono"] { --font-sans: "Inter", system-ui, sans-serif; --font-mono: "JetBrains Mono", monospace; --font-display: "Inter", sans-serif; }
-[data-typeset="ibm-plex"] { --font-sans: "IBM Plex Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", monospace; --font-display: "IBM Plex Sans", sans-serif; }
-[data-typeset="serif-mono"] { --font-sans: "Inter", system-ui, sans-serif; --font-mono: "JetBrains Mono", monospace; --font-display: "Source Serif 4", Georgia, serif; }
+/* Individual font variants */
+/* Sans font variants */
+[data-font-sans="inter"] { --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+[data-font-sans="ibm-plex-sans"] { --font-sans: "IBM Plex Sans", system-ui, sans-serif; }
+[data-font-sans="jetbrains-mono"] { --font-sans: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace; }
+[data-font-sans="system"] { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+
+/* Mono font variants */
+[data-font-mono="jetbrains-mono"] { --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace; }
+[data-font-mono="ibm-plex-mono"] { --font-mono: "IBM Plex Mono", monospace; }
+[data-font-mono="fira-code"] { --font-mono: "Fira Code", "SF Mono", monospace; }
+[data-font-mono="consolas"] { --font-mono: "Consolas", "Menlo", monospace; }
+
+/* Display font variants */
+[data-font-display="inter"] { --font-display: "Inter", system-ui, sans-serif; }
+[data-font-display="ibm-plex-sans"] { --font-display: "IBM Plex Sans", sans-serif; }
+[data-font-display="source-serif"] { --font-display: "Source Serif 4", Georgia, serif; }
+[data-font-display="jetbrains-mono"] { --font-display: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace; }
+[data-font-display="system"] { --font-display: system-ui, sans-serif; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
