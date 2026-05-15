@@ -2,12 +2,14 @@
 
 a = Analysis(
     ['start.py'],
-    pathex=['.'],
+    pathex=['src'],
     binaries=[],
     datas=[
-        ('frontend', 'frontend'),
-        ('app',      'app'),
-        ('indexer',  'indexer'),
+        # source path → bundled name under _MEIPASS (kept flat so frozen-mode
+        # `from app.config import …` and `_MEIPASS / "frontend"` keep working)
+        ('src/frontend', 'frontend'),
+        ('src/app',      'app'),
+        ('src/indexer',  'indexer'),
     ],
     hiddenimports=[
         'uvicorn', 'uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto',

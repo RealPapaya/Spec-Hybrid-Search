@@ -30,10 +30,11 @@ import webbrowser
 import urllib.request
 from pathlib import Path
 
-# ── Bootstrap: make sure the project root is on sys.path ─────────────────────
+# ── Bootstrap: make sure src/ is on sys.path so `import app`/`import indexer` work
 PROJECT_ROOT = Path(__file__).parent.resolve()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 from app.config import (
     QDRANT_BIN_DIR,
@@ -46,6 +47,8 @@ from app.config import (
     API_HOST,
     API_PORT,
     WATCHED_DOCS_DIR,
+    LOG_DIR,
+    SNAPSHOTS_DIR,
 )
 
 logging.basicConfig(
@@ -142,15 +145,17 @@ def start_qdrant() -> subprocess.Popen:
 
     # Newer Qdrant versions prefer environment variables over CLI flags
     env = os.environ.copy()
-    env["QDRANT__STORAGE__STORAGE_PATH"] = str(QDRANT_DATA_DIR)
-    env["QDRANT__SERVICE__HTTP_PORT"]    = str(QDRANT_PORT)
-    env["QDRANT__SERVICE__HOST"]         = QDRANT_HOST
+    env["QDRANT__STORAGE__STORAGE_PATH"]   = str(QDRANT_DATA_DIR)
+    # Qdrant defaults snapshots to ./snapshots relative to CWD; pin it under
+    # data/ so nothing escapes the project's runtime-data subtree.
+    env["QDRANT__STORAGE__SNAPSHOTS_PATH"] = str(SNAPSHOTS_DIR)
+    env["QDRANT__SERVICE__HTTP_PORT"]      = str(QDRANT_PORT)
+    env["QDRANT__SERVICE__HOST"]           = QDRANT_HOST
     # Qdrant defaults to verbose telemetry; disabling shaves ~100 ms off start.
     env.setdefault("QDRANT__TELEMETRY_DISABLED", "true")
 
-    log_dir = PROJECT_ROOT / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    qdrant_log = open(log_dir / "qdrant.log", "ab")
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    qdrant_log = open(LOG_DIR / "qdrant.log", "ab")
 
     cmd = [str(QDRANT_BIN_PATH)]
     logger.info("Starting Qdrant: %s", " ".join(cmd))
@@ -222,14 +227,31 @@ def _wait_for_api(url: str, timeout: int = 15) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def _migrate_legacy_dirs() -> None:
+    """Move pre-restructure runtime dirs (db/, qdrant_data/, qdrant_bin/,
+    snapshots/, logs/) from project root into data/. One-shot — runs before
+    Qdrant starts so we never race a locked qdrant_data/ folder."""
+    legacy = ("db", "qdrant_data", "qdrant_bin", "snapshots", "logs")
+    for name in legacy:
+        old = PROJECT_ROOT / name
+        new = PROJECT_ROOT / "data" / name
+        if old.exists() and not new.exists():
+            new.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(old), str(new))
+            logger.info("Migrated legacy dir: %s → %s", old, new)
+
+
 def main() -> None:
-    # 1. Ensure required dirs exist
+    # 1. One-shot migration from the pre-data/ layout
+    _migrate_legacy_dirs()
+
+    # 2. Ensure required dirs exist
     WATCHED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 2. Download Qdrant binary if needed
+    # 3. Download Qdrant binary if needed
     ensure_qdrant_binary()
 
-    # 3. Launch Qdrant
+    # 4. Launch Qdrant
     qdrant_proc = start_qdrant()
     try:
         wait_for_qdrant()

@@ -7,16 +7,13 @@ __pycache__/
 .venv/
 venv/
 
-# ── Runtime data (generated, not source) ─────────────────────────────────────
-db/
-qdrant_data/
+# ── Runtime data (generated, not source) — all under data/ ──────────────────
+data/
 watched_docs/
-snapshots/
 .qdrant-initialized
 
 # ── Binaries / build output ───────────────────────────────────────────────────
 DocSense.exe
-qdrant_bin/
 _internal/
 build/
 dist/
@@ -25,7 +22,6 @@ out/
 # ── Local env ─────────────────────────────────────────────────────────────────
 .env
 .env*.local
-logs/
 
 # ── OS / IDE ──────────────────────────────────────────────────────────────────
 .DS_Store

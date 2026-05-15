@@ -43,7 +43,9 @@ if sys.platform == "win32":
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 ROOT_DIR  = Path(__file__).resolve().parent
-LOG_DIR   = ROOT_DIR / "logs"
+# Runtime data is centralised under data/; keep path hard-coded here because
+# launcher runs before .venv exists, so we cannot import app.config.
+LOG_DIR   = ROOT_DIR / "data" / "logs"
 LOG_FILE  = LOG_DIR / "docsense.log"
 ERR_FILE  = LOG_DIR / "docsense.err.log"
 START_PY  = ROOT_DIR / "start.py"

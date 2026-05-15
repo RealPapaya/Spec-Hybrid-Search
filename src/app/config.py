@@ -11,19 +11,26 @@ from pathlib import Path
 # User-facing data dirs (watched_docs, db, qdrant_*) must live next to the exe,
 # not inside _internal, so users can find and manage them easily.
 if getattr(sys, "frozen", False):
-    # Running as packaged exe — place user data next to the .exe
-    _EXE_DIR  = Path(sys.executable).parent
-    BASE_DIR  = _EXE_DIR           # user data next to DocSense.exe
-    _INT_DIR  = Path(sys._MEIPASS)  # bundled read-only assets
+    # Packaged exe — place user data next to the .exe.
+    # PyInstaller flattens src/frontend → _MEIPASS/frontend (see DocSense.spec
+    # `datas`), so FRONTEND_DIR lives at the root of _MEIPASS in frozen mode.
+    _EXE_DIR     = Path(sys.executable).parent
+    BASE_DIR     = _EXE_DIR                            # user data next to DocSense.exe
+    FRONTEND_DIR = Path(sys._MEIPASS) / "frontend"
 else:
-    BASE_DIR  = Path(__file__).parent.parent   # docsense/
-    _INT_DIR  = BASE_DIR
+    # Dev layout: this file is at src/app/config.py, so three parents up = project root.
+    BASE_DIR     = Path(__file__).parent.parent.parent
+    FRONTEND_DIR = BASE_DIR / "src" / "frontend"
 
-QDRANT_BIN_DIR   = BASE_DIR / "qdrant_bin"
-QDRANT_DATA_DIR  = BASE_DIR / "qdrant_data"
-DB_DIR           = BASE_DIR / "db"
+# All runtime/state directories live under data/ (gitignored). watched_docs/
+# stays at the project root because it's the user-facing drop zone.
+DATA_DIR         = BASE_DIR / "data"
+QDRANT_BIN_DIR   = DATA_DIR / "qdrant_bin"
+QDRANT_DATA_DIR  = DATA_DIR / "qdrant_data"
+DB_DIR           = DATA_DIR / "db"
+LOG_DIR          = DATA_DIR / "logs"
+SNAPSHOTS_DIR    = DATA_DIR / "snapshots"
 WATCHED_DOCS_DIR = BASE_DIR / "watched_docs"
-FRONTEND_DIR     = _INT_DIR / "frontend"
 
 # ── Qdrant ────────────────────────────────────────────────────────────────────
 QDRANT_HOST       = "localhost"
