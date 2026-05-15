@@ -23,6 +23,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.config import FRONTEND_DIR, WATCHED_DOCS_DIR
 from app.routes import search as search_router
@@ -121,14 +122,36 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # API routes
+    # API routes - registered first to ensure they have priority
     app.include_router(search_router.router, prefix="/api")
     app.include_router(index_router.router,  prefix="/api")
     app.include_router(settings_router.router, prefix="/api")
 
-    # Serve the single-page frontend at /
+    # Serve favicon.ico explicitly to avoid 404
+    @app.get("/favicon.ico")
+    async def serve_favicon():
+        favicon_path = FRONTEND_DIR / "favicon.ico"
+        if favicon_path.exists():
+            return FileResponse(favicon_path)
+        # Return a 204 No Content if favicon doesn't exist (better than 404)
+        from fastapi.responses import Response
+        return Response(status_code=204)
+
+    # Serve the single-page frontend at / using SPAStaticFiles
+    # This custom class ensures API routes are not overridden
+    class SPAStaticFiles(StaticFiles):
+        async def get_response(self, path: str, scope):
+            try:
+                return await super().get_response(path, scope)
+            except Exception:
+                # If file not found, serve index.html for SPA routing
+                # But DON'T do this for /api/ paths
+                if not path.startswith("api/"):
+                    return await super().get_response("index.html", scope)
+                raise
+
     FRONTEND_DIR.mkdir(parents=True, exist_ok=True)
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+    app.mount("/", SPAStaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 
     return app
 

@@ -1,5 +1,29 @@
 // ResultRow — a single result card. ResultsPanel — list with header/sort/layout.
 
+// File type icon component with color-coded SVG
+function FileTypeIcon({ type }) {
+  const colors = {
+    'PDF': '#E74C3C',
+    'DOCX': '#3498DB',
+    'DOC': '#3498DB',
+    'XLSX': '#27AE60',
+    'XLS': '#27AE60',
+    'PPTX': '#E67E22',
+    'PPT': '#E67E22',
+    'TXT': '#95A5A6',
+  };
+  const color = colors[type] || '#7F8C8D';
+  
+  return (
+    <svg viewBox="0 0 16 20" width="14" height="16" style={{ flexShrink: 0, marginRight: 6 }}>
+      <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill={color} opacity="0.15" />
+      <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill="none" stroke={color} strokeWidth="1.5" />
+      <path d="M10 0v6h6" fill="none" stroke={color} strokeWidth="1.5" />
+      <text x="8" y="15" textAnchor="middle" fontSize="5" fontWeight="600" fill={color}>{type}</text>
+    </svg>
+  );
+}
+
 function ResultRow({ result, index, selected, onSelect }) {
   const T = useT();
   const score = result.score || 0;
@@ -9,17 +33,19 @@ function ResultRow({ result, index, selected, onSelect }) {
       <div className="num">#{String(index + 1).padStart(2, '0')}</div>
       <div className="body">
         <div className="result-row1">
-          {result.type && <span className="tag">{result.type}</span>}
+          {result.type && <FileTypeIcon type={result.type} />}
           <span className="specname">{result.spec}</span>
           <span className="spacer"></span>
           <span className={'score-pill' + sc}>{score.toFixed(4)}</span>
         </div>
         <div className="result-row2">
-          {result.section && <><span className="section">{result.section}</span><span className="sep">·</span></>}
-          <span className="pg">{result.page ? 'p. ' + result.page : ''}</span>
+          {result.type && <span className="tag">{result.type}</span>}
+        </div>
+        <div className="result-row3">
+          {result.section && <span className="section">{result.section}</span>}
         </div>
         <div className="excerpt">{highlightText(result.excerpt, result.highlight)}</div>
-        <div className="result-row3">
+        <div className="result-row4">
           <span className="scoreitem" data-tip={T('score_bm25_tip')}><span className="dot bm"></span>BM25 {(result.bm25 || 0).toFixed(2)}</span>
           <span className="scoreitem" data-tip={T('score_cos_tip')}><span className="dot sem"></span>cos {(result.semantic || 0).toFixed(2)}</span>
         </div>
