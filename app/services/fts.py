@@ -271,3 +271,13 @@ def get_stats() -> Dict[str, int]:
     total_chunks = con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
     con.close()
     return {"total_documents": total_docs, "total_chunks": total_chunks}
+
+
+def get_all_documents() -> List[Dict[str, Any]]:
+    con = _conn()
+    rows = con.execute(
+        "SELECT doc_id, filepath, filename, file_size, modified_at, chunk_count "
+        "FROM documents ORDER BY filepath"
+    ).fetchall()
+    con.close()
+    return [dict(r) for r in rows]

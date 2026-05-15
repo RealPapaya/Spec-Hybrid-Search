@@ -1037,6 +1037,211 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Documents view ─────────────────────────────────────────────────────────── */
+.docs-view {
+  display: flex; flex-direction: column;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  background: var(--bg);
+}
+.docs-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  flex-shrink: 0;
+  height: 46px;
+}
+.docs-toolbar .spacer { flex: 1; }
+.docs-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.docs-view-toggle button {
+  height: 26px; width: 30px; padding: 0;
+  background: var(--bg); border: none;
+  color: var(--fg-faint); cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.1s, color 0.1s;
+}
+.docs-view-toggle button.on { background: var(--bg-soft); color: var(--accent); }
+.docs-view-toggle button svg { width: 13px; height: 13px; }
+.docs-body { flex: 1; overflow-y: auto; }
+.docs-body::-webkit-scrollbar { width: 10px; }
+.docs-body::-webkit-scrollbar-track { background: transparent; }
+.docs-body::-webkit-scrollbar-thumb {
+  background: var(--border-strong); border-radius: 5px;
+  border: 2px solid var(--bg); background-clip: padding-box;
+}
+
+/* Explorer tree */
+.explorer-root { padding: 4px 0; }
+.explorer-folder-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 14px; cursor: pointer;
+  font-size: 12.5px; font-weight: 500; color: var(--fg);
+  user-select: none; transition: background 0.08s;
+}
+.explorer-folder-row:hover { background: var(--bg-hover); }
+.explorer-folder-row .caret {
+  width: 10px; height: 10px; color: var(--fg-faint); flex-shrink: 0;
+  transition: transform 0.12s;
+}
+.explorer-folder-row.open .caret { transform: rotate(90deg); }
+.explorer-folder-row .folder-count {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-faint);
+}
+.explorer-children {
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
+  margin-left: 22px;
+}
+.explorer-file-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px; cursor: default;
+  font-size: 12px; color: var(--fg-muted);
+  transition: background 0.08s; position: relative;
+}
+.explorer-file-row:hover { background: var(--bg-hover); color: var(--fg); }
+.explorer-file-row .file-name {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.explorer-file-row .file-tags { display: flex; gap: 3px; overflow: hidden; flex-shrink: 0; }
+.explorer-file-row .file-actions { display: none; gap: 4px; flex-shrink: 0; }
+.explorer-file-row:hover .file-actions { display: flex; }
+
+/* Document list cards */
+.doc-grid { display: flex; flex-direction: column; }
+.doc-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  cursor: default; transition: background 0.08s; position: relative;
+}
+.doc-card:hover { background: var(--bg-hover); }
+.doc-icon {
+  width: 34px; height: 34px; border-radius: 6px;
+  display: grid; place-items: center; flex-shrink: 0; margin-top: 1px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.doc-body { flex: 1; min-width: 0; }
+.doc-name {
+  font-size: 13px; font-weight: 600; color: var(--fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.doc-meta {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-faint);
+  display: flex; align-items: center; gap: 5px; margin-bottom: 6px; flex-wrap: wrap;
+}
+.doc-meta .sep { opacity: 0.5; }
+.doc-tags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.doc-actions {
+  display: flex; gap: 4px; flex-shrink: 0; align-items: flex-start; margin-top: 1px;
+  opacity: 0; transition: opacity 0.1s;
+}
+.doc-card:hover .doc-actions { opacity: 1; }
+
+/* Tag pills */
+.tag-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  height: 17px; padding: 0 7px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  border: 1px solid transparent; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 90px;
+}
+.tag-pill-folder {
+  background: var(--accent-soft); color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.tag-pill-custom { color: white; }
+
+/* Tag assign dropdown */
+.tag-assign-menu {
+  position: fixed; z-index: 9990;
+  width: 210px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.14);
+  padding: 6px 0;
+  font-size: 12.5px;
+}
+.tag-assign-menu .menu-sect {
+  padding: 4px 10px 2px;
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-faint);
+}
+.tag-assign-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; cursor: pointer; color: var(--fg);
+  transition: background 0.08s;
+}
+.tag-assign-item:hover { background: var(--bg-hover); }
+.tag-assign-item .chk {
+  width: 13px; height: 13px; border-radius: 3px;
+  border: 1px solid var(--border-strong); flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.tag-assign-item.on .chk { background: var(--accent); border-color: var(--accent); }
+.tag-assign-item.on .chk::after { content: '✓'; font-size: 8.5px; color: white; }
+.tag-assign-new {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px 6px; border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.tag-assign-new input {
+  flex: 1; height: 24px; padding: 0 7px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; font: inherit; font-size: 11.5px; color: var(--fg); outline: none;
+  min-width: 0;
+}
+.tag-assign-new input:focus { border-color: var(--accent); }
+.tag-assign-new button {
+  height: 24px; padding: 0 8px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 4px; font: inherit; font-size: 11px; cursor: pointer;
+}
+
+/* Tags filter section */
+.fgroup-subsect {
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-faint);
+  padding: 6px 0 3px;
+}
+.new-tag-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 0 4px;
+}
+.new-tag-row input {
+  flex: 1; height: 24px; padding: 0 7px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; font: inherit; font-size: 11.5px; color: var(--fg); outline: none;
+  min-width: 0;
+}
+.new-tag-row input:focus { border-color: var(--accent); }
+.new-tag-row button {
+  height: 24px; padding: 0 9px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 4px; font: inherit; font-size: 11px; cursor: pointer; flex-shrink: 0;
+}
+
+/* Active tag filter bar */
+.tag-filter-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 6px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg-elev); font-size: 11.5px;
+}
+.tag-filter-bar .bar-label {
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-faint);
+  flex-shrink: 0;
+}
+.tag-filter-bar .clear-all { color: var(--accent); cursor: pointer; font-size: 11px; flex-shrink: 0; }
+
 /* ── Custom tooltip ── */
 #tip {
   position: fixed;
@@ -1751,6 +1956,23 @@ const DICT = {
     download_pdf: "Download document",
     page_short: "p.",
 
+    // documents view
+    docs_nav:        "Files",
+    docs_back:       "Back to search",
+    docs_list:       "List view",
+    docs_explorer:   "Explorer view",
+    docs_empty:      "No documents indexed yet",
+    docs_search:     "Filter files...",
+    docs_chunks:     "chunks",
+    docs_tags:       "Tags",
+    docs_tags_folder: "Folders",
+    docs_tags_custom: "Custom",
+    docs_new_tag:    "New tag name...",
+    docs_add:        "Add",
+    docs_tag_assign: "Assign tags",
+    docs_open:       "Open",
+    docs_all_files:  "All files",
+
     // bookmarks page
     bookmarks_title:    "Bookmarks",
     bookmarks_nav:      "Bookmarks",
@@ -1844,6 +2066,22 @@ const DICT = {
     download_pdf: "下載文件",
     page_short: "第",
 
+    docs_nav:        "檔案",
+    docs_back:       "返回搜尋",
+    docs_list:       "清單檢視",
+    docs_explorer:   "樹狀檢視",
+    docs_empty:      "尚未索引任何文件",
+    docs_search:     "過濾檔案...",
+    docs_chunks:     "區塊",
+    docs_tags:       "標籤",
+    docs_tags_folder: "資料夾",
+    docs_tags_custom: "自訂",
+    docs_new_tag:    "輸入新標籤名稱...",
+    docs_add:        "新增",
+    docs_tag_assign: "指派標籤",
+    docs_open:       "開啟",
+    docs_all_files:  "全部檔案",
+
     bookmarks_title:    "我的收藏",
     bookmarks_nav:      "收藏",
     bookmarks_back:     "返回搜尋",
@@ -1883,6 +2121,429 @@ const DICT = {
   }
 };
 
+
+// ─── Tags storage ─────────────────────────────────────────────────────────────
+const TAGS_KEY = 'docsense_tags_v1';
+const TAG_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16'];
+
+function loadTagsData() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TAGS_KEY) || 'null');
+    if (raw && typeof raw === 'object' && Array.isArray(raw.customTags)) return raw;
+  } catch(e) {}
+  return { customTags: [], assignments: {} };
+}
+function saveTagsData(data) {
+  try { localStorage.setItem(TAGS_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function getFolderName(filepath) {
+  if (!filepath) return '';
+  const parts = filepath.replace(/\\/g, '/').split('/');
+  return parts.length >= 2 ? parts[parts.length - 2] : '';
+}
+
+// ─── TagAssignMenu ─────────────────────────────────────────────────────────────
+function TagAssignMenu({ doc_id, tagsData, setTagsData, anchorRect, onClose }) {
+  const T = useT();
+  const [newName, setNewName] = React.useState('');
+  const menuRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) onClose(); };
+    const khandler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', khandler);
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', khandler); };
+  }, [onClose]);
+
+  const assigned = tagsData.assignments[doc_id] || [];
+  const toggle = (tagId) => {
+    const cur = tagsData.assignments[doc_id] || [];
+    const next = cur.includes(tagId) ? cur.filter(x => x !== tagId) : [...cur, tagId];
+    const nd = { ...tagsData, assignments: { ...tagsData.assignments, [doc_id]: next } };
+    setTagsData(nd); saveTagsData(nd);
+  };
+  const createTag = () => {
+    const name = newName.trim(); if (!name) return;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
+    const cur = tagsData.assignments[doc_id] || [];
+    const nd = { customTags: [...tagsData.customTags, { id, name, color }], assignments: { ...tagsData.assignments, [doc_id]: [...cur, id] } };
+    setTagsData(nd); saveTagsData(nd); setNewName('');
+  };
+  const top = Math.min(anchorRect.bottom + 4, window.innerHeight - 250);
+  const left = Math.min(anchorRect.left, window.innerWidth - 220);
+
+  return (
+    <div className="tag-assign-menu" ref={menuRef} style={{ top, left }}>
+      {tagsData.customTags.length > 0 && (
+        <>
+          <div className="menu-sect">{T('docs_tags_custom')}</div>
+          {tagsData.customTags.map(tag => (
+            <div key={tag.id} className={'tag-assign-item' + (assigned.includes(tag.id) ? ' on' : '')} onClick={() => toggle(tag.id)}>
+              <div className="chk"></div>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: tag.color, flexShrink: 0, display: 'inline-block' }}></span>
+              <span>{tag.name}</span>
+            </div>
+          ))}
+        </>
+      )}
+      <div className="tag-assign-new">
+        <input value={newName} onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { createTag(); } e.stopPropagation(); }}
+          placeholder={T('docs_new_tag')} autoFocus />
+        <button onClick={createTag}>{T('docs_add')}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── TagsFilterGroup ──────────────────────────────────────────────────────────
+function TagsFilterGroup({ filters, setFilters, allResults, tagsData, setTagsData }) {
+  const T = useT();
+  const [newName, setNewName] = React.useState('');
+
+  const folderCounts = React.useMemo(() => {
+    const c = {};
+    allResults.forEach(r => { const f = getFolderName(r.filepath); if (f) c[f] = (c[f]||0)+1; });
+    return c;
+  }, [allResults]);
+  const folderNames = Object.keys(folderCounts).sort();
+  const activeTags = filters.tags || [];
+
+  const toggleTag = (key) => {
+    const next = activeTags.includes(key) ? activeTags.filter(x => x !== key) : [...activeTags, key];
+    setFilters({ ...filters, tags: next });
+  };
+  const createTag = () => {
+    const name = newName.trim(); if (!name) return;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
+    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name, color }] };
+    setTagsData(nd); saveTagsData(nd); setNewName('');
+  };
+
+  return (
+    <div className="fgroup">
+      <div className="fgroup-title">
+        <span>{T('docs_tags')}</span>
+        {activeTags.length > 0 && <span className="clear" onClick={() => setFilters({ ...filters, tags: [] })}>{T('f_clear')}</span>}
+      </div>
+
+      {folderNames.length > 0 && (
+        <>
+          <div className="fgroup-subsect">{T('docs_tags_folder')}</div>
+          {folderNames.map(f => {
+            const key = 'folder:' + f;
+            const on = activeTags.includes(key);
+            return (
+              <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
+                <div className="checkbox"><Icon.check /></div>
+                <span className="label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg viewBox="0 0 14 14" width="12" height="12" fill="currentColor" style={{ opacity: 0.6, flexShrink: 0 }}><path d="M1 2.5A1 1 0 0 1 2 1.5h3.1a1 1 0 0 1 .71.3l.69.7H12a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2.5z"/></svg>
+                  {f}
+                </span>
+                <span className="count">{folderCounts[f]}</span>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {tagsData.customTags.length > 0 && (
+        <>
+          <div className="fgroup-subsect" style={{ paddingTop: folderNames.length ? 8 : 0 }}>{T('docs_tags_custom')}</div>
+          {tagsData.customTags.map(tag => {
+            const key = 'custom:' + tag.id;
+            const on = activeTags.includes(key);
+            return (
+              <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
+                <div className="checkbox"><Icon.check /></div>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tag.color, flexShrink: 0, display: 'inline-block' }}></span>
+                <span className="label">{tag.name}</span>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      <div className="new-tag-row">
+        <input value={newName} onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { createTag(); e.stopPropagation(); } e.stopPropagation(); }}
+          placeholder={T('docs_new_tag')} />
+        <button onClick={createTag}>{T('docs_add')}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ExplorerNode ─────────────────────────────────────────────────────────────
+function _countFiles(node) {
+  return node.files.length + Object.values(node.children).reduce((s, c) => s + _countFiles(c), 0);
+}
+
+function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen }) {
+  const T = useT();
+  const [menuAnchor, setMenuAnchor] = React.useState(null);
+  const assigned = tagsData.assignments[doc.doc_id] || [];
+  const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
+  return (
+    <div className="explorer-file-row">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" style={{ flexShrink: 0, color: 'var(--fg-faint)' }}><path d="M3.5 1h5l3 3v9H3.5z" strokeLinejoin="round"/><path d="M8.5 1v3h3" strokeLinejoin="round"/></svg>
+      <span className="file-name" title={doc.filepath}>{doc.filename}</span>
+      <div className="file-tags">
+        {assignedTags.slice(0,2).map(tag => (
+          <span key={tag.id} className="tag-pill tag-pill-custom" style={{ background: tag.color, maxWidth: 64 }}>{tag.name}</span>
+        ))}
+      </div>
+      <div className="file-actions">
+        <button className="iconbtn" style={{ height: 20, padding: '0 5px' }} onClick={e => { e.stopPropagation(); onOpen(doc); }} data-tip={T('docs_open')}>
+          <Icon.external />
+        </button>
+        <button className="iconbtn" style={{ height: 20, padding: '0 5px' }} onClick={e => { e.stopPropagation(); setMenuAnchor(e.currentTarget.getBoundingClientRect()); }} data-tip={T('docs_tag_assign')}>
+          <Icon.tag />
+        </button>
+      </div>
+      {menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
+    </div>
+  );
+}
+
+function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onOpenFile }) {
+  const [open, setOpen] = React.useState(depth === 0);
+  const childEntries = Object.entries(children).sort(([a],[b]) => a.localeCompare(b));
+  const totalCount = _countFiles({ children, files });
+  return (
+    <div>
+      <div className={'explorer-folder-row' + (open ? ' open' : '')} onClick={() => setOpen(!open)}>
+        <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ opacity: 0.55, flexShrink: 0 }}><path d="M1 2.5A1 1 0 0 1 2 1.5h3.1a1 1 0 0 1 .71.3l.69.7H12a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2.5z"/></svg>
+        <span>{name}</span>
+        <span className="folder-count">{totalCount}</span>
+      </div>
+      {open && (
+        <div className="explorer-children">
+          {childEntries.map(([n, node]) => (
+            <ExplorerNode key={n} name={n} {...node} depth={depth+1} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={onOpenFile} />
+          ))}
+          {files.map(doc => (
+            <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpenFile} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DocCard ──────────────────────────────────────────────────────────────────
+function DocCard({ doc, tagsData, setTagsData, onOpen }) {
+  const T = useT();
+  const [menuAnchor, setMenuAnchor] = React.useState(null);
+  const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
+  const folder = getFolderName(doc.filepath);
+  const assigned = tagsData.assignments[doc.doc_id] || [];
+  const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
+  const sizeStr = doc.file_size ? (doc.file_size >= 1048576 ? (doc.file_size/1048576).toFixed(1)+' MB' : Math.round(doc.file_size/1024)+' KB') : '';
+  const extColors = { PDF: ['#ef4444','#fef2f2'], DOCX: ['#3b82f6','#eff6ff'], XLSX: ['#10b981','#ecfdf5'], PPTX: ['#f59e0b','#fffbeb'] };
+  const [fg, bg] = extColors[ext] || ['var(--fg-faint)','var(--bg-soft)'];
+  return (
+    <div className="doc-card">
+      <div className="doc-icon" style={{ color: fg, background: bg, border: '1px solid ' + fg + '33' }}>{ext || '?'}</div>
+      <div className="doc-body">
+        <div className="doc-name" title={doc.filepath}>{doc.filename}</div>
+        <div className="doc-meta">
+          {folder && <><span style={{ color: 'var(--accent)' }}>{folder}</span><span className="sep">·</span></>}
+          {sizeStr && <><span>{sizeStr}</span>{doc.chunk_count > 0 && <span className="sep">·</span>}</>}
+          {doc.chunk_count > 0 && <span>{doc.chunk_count} {T('docs_chunks')}</span>}
+        </div>
+        {(folder || assignedTags.length > 0) && (
+          <div className="doc-tags">
+            {folder && <span className="tag-pill tag-pill-folder">{folder}</span>}
+            {assignedTags.map(tag => (
+              <span key={tag.id} className="tag-pill tag-pill-custom" style={{ background: tag.color }}>{tag.name}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="doc-actions">
+        <button className="iconbtn" style={{ height: 26 }} onClick={() => onOpen(doc)} data-tip={T('docs_open')}><Icon.external /></button>
+        <button className="iconbtn" style={{ height: 26 }} onClick={e => setMenuAnchor(e.currentTarget.getBoundingClientRect())} data-tip={T('docs_tag_assign')}><Icon.tag /></button>
+      </div>
+      {menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
+    </div>
+  );
+}
+
+// ─── DocumentsView ────────────────────────────────────────────────────────────
+function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
+  const T = useT();
+  const lang = React.useContext(LangCtx);
+  const [docs, setDocs] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState('list');
+  const [filterText, setFilterText] = React.useState('');
+  const [activeTagFilter, setActiveTagFilter] = React.useState([]);
+
+  React.useEffect(() => {
+    fetch('/api/documents').then(r => r.json()).then(d => { setDocs(d.documents || []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  const filtered = React.useMemo(() => {
+    let ds = docs;
+    if (filterText.trim()) { const q = filterText.toLowerCase(); ds = ds.filter(d => d.filename.toLowerCase().includes(q) || d.filepath.toLowerCase().includes(q)); }
+    if (activeTagFilter.length) {
+      ds = ds.filter(doc => {
+        const folder = getFolderName(doc.filepath);
+        const assigned = tagsData.assignments[doc.doc_id] || [];
+        return activeTagFilter.some(key => {
+          if (key.startsWith('folder:')) return folder === key.slice(7);
+          if (key.startsWith('custom:')) return assigned.includes(key.slice(7));
+          return false;
+        });
+      });
+    }
+    return ds;
+  }, [docs, filterText, activeTagFilter, tagsData]);
+
+  const folderCounts = React.useMemo(() => {
+    const c = {}; docs.forEach(d => { const f = getFolderName(d.filepath); if (f) c[f] = (c[f]||0)+1; }); return c;
+  }, [docs]);
+
+  const openDoc = (doc) => window.open('/api/file/' + encodeURIComponent(doc.doc_id), '_blank', 'noopener');
+
+  const tree = React.useMemo(() => {
+    const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : null;
+    const root = { name: lang === 'zh' ? '全部檔案' : 'All Files', children: {}, files: [] };
+    filtered.forEach(doc => {
+      const fullPath = doc.filepath.replace(/\\/g, '/');
+      let rel = (base && fullPath.startsWith(base)) ? fullPath.slice(base.length) : doc.filename;
+      const parts = rel.split('/'); parts.pop();
+      let node = root;
+      parts.forEach(part => {
+        if (!part) return;
+        if (!node.children[part]) node.children[part] = { name: part, children: {}, files: [] };
+        node = node.children[part];
+      });
+      node.files.push(doc);
+    });
+    return root;
+  }, [filtered, watchedDir, lang]);
+
+  const toggleTagFilter = (key) => setActiveTagFilter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+
+  return (
+    <section className="docs-view">
+      <div className="docs-toolbar">
+        <button className="iconbtn" onClick={onBack}><Icon.back /> <span style={{ fontSize: 11 }}>{T('docs_back')}</span></button>
+        <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }}></div>
+        <div className="searchbox" style={{ height: 28, flex: '0 1 260px' }}>
+          <div className="glass"><Icon.search /></div>
+          <input value={filterText} onChange={e => setFilterText(e.target.value)} placeholder={T('docs_search')} style={{ fontSize: 12 }} />
+        </div>
+        <span className="spacer"></span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-faint)' }}>
+          {filtered.length}{docs.length !== filtered.length ? ' / ' + docs.length : ''} {lang === 'zh' ? '份文件' : 'files'}
+        </span>
+        <div className="docs-view-toggle">
+          <button className={viewMode === 'list' ? 'on' : ''} onClick={() => setViewMode('list')} data-tip={T('docs_list')}><Icon.rows /></button>
+          <button className={viewMode === 'explorer' ? 'on' : ''} onClick={() => setViewMode('explorer')} data-tip={T('docs_explorer')}><Icon.tree /></button>
+        </div>
+      </div>
+
+      {activeTagFilter.length > 0 && (
+        <div className="tag-filter-bar">
+          <span className="bar-label">{T('docs_tags')}:</span>
+          {activeTagFilter.map(key => {
+            let label = key.startsWith('folder:') ? key.slice(7) : (tagsData.customTags.find(t => 'custom:'+t.id === key)?.name || key);
+            return (
+              <span key={key} className="tag-pill tag-pill-folder" style={{ height: 20, cursor: 'pointer' }} onClick={() => toggleTagFilter(key)}>{label} ×</span>
+            );
+          })}
+          <span className="clear-all" onClick={() => setActiveTagFilter([])}>{T('f_clear')}</span>
+        </div>
+      )}
+
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {/* Left tag sidebar */}
+        <div style={{ width: 196, flexShrink: 0, borderRight: '1px solid var(--border)', background: 'var(--bg-elev)', overflowY: 'auto', padding: '4px 0' }}>
+          {Object.keys(folderCounts).length > 0 && (
+            <div className="fgroup">
+              <div className="fgroup-title"><span>{T('docs_tags_folder')}</span></div>
+              {Object.entries(folderCounts).sort(([a],[b]) => a.localeCompare(b)).map(([f, ct]) => {
+                const key = 'folder:' + f; const on = activeTagFilter.includes(key);
+                return (
+                  <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTagFilter(key)}>
+                    <div className="checkbox"><Icon.check /></div>
+                    <span className="label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f}</span>
+                    <span className="count">{ct}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="fgroup">
+            <div className="fgroup-title">
+              <span>{T('docs_tags_custom')}</span>
+              {activeTagFilter.some(k => k.startsWith('custom:')) && <span className="clear" onClick={() => setActiveTagFilter(prev => prev.filter(k => !k.startsWith('custom:')))}>{T('f_clear')}</span>}
+            </div>
+            {tagsData.customTags.map(tag => {
+              const key = 'custom:' + tag.id; const on = activeTagFilter.includes(key);
+              return (
+                <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTagFilter(key)}>
+                  <div className="checkbox"><Icon.check /></div>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: tag.color, flexShrink: 0, display: 'inline-block' }}></span>
+                  <span className="label">{tag.name}</span>
+                </div>
+              );
+            })}
+            <div className="new-tag-row" style={{ paddingTop: 8 }}>
+              <input placeholder={lang === 'zh' ? '新增標籤...' : 'New tag...'}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    const name = e.target.value.trim();
+                    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+                    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
+                    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name, color }] };
+                    setTagsData(nd); saveTagsData(nd); e.target.value = '';
+                  }
+                  e.stopPropagation();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="docs-body" style={{ flex: 1 }}>
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+              <div style={{ width: 22, height: 22, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="empty"><div><div className="ico"><Icon.page /></div>{T('docs_empty')}</div></div>
+          ) : viewMode === 'explorer' ? (
+            <div className="explorer-root">
+              {Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b)).map(([n, node]) => (
+                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} />
+              ))}
+              {tree.files.map(doc => (
+                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} />
+              ))}
+            </div>
+          ) : (
+            <div className="doc-grid">
+              {filtered.map(doc => (
+                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ─── API result mapper ────────────────────────────────────────────────────────
 function mapResult(r, query, index) {
@@ -2232,6 +2893,9 @@ const Icon = {
   page:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4 1.5h5.5L12 4v10.5H4z" strokeLinejoin="round"/><path d="M9.5 1.5V4H12M5.5 7.5h5M5.5 10h5M5.5 12.5h3" strokeLinecap="round"/></svg>,
   trash:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.5 9.5h6L11.5 4M6.5 6.5v5M9.5 6.5v5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   back:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M10 3l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  tree:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 2.5v11M3 8h4M3 13h7M7 8v5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="7" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="2.5" r="1.5" fill="currentColor" stroke="none"/></svg>,
+  tag:      () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 2h5.5l6.5 6.5-5.5 5.5L2 7.5V2z" strokeLinejoin="round"/><circle cx="5" cy="5" r="1" fill="currentColor" stroke="none"/></svg>,
+  folder:   () => <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.5A1 1 0 0 1 2.5 2.5h3.586a1 1 0 0 1 .707.293l.914.914H13.5a1 1 0 0 1 1 1V12.5a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V3.5z" opacity=".3"/><path d="M1.5 5.5h13v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7z"/></svg>,
 };
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
@@ -2245,6 +2909,7 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
         : `ready · ${status.total_documents ?? 0} docs · ${status.total_chunks ?? 0} chunks`)
     : (lang === 'zh' ? '離線' : 'offline');
   const inBookmarks = view === 'bookmarks';
+  const inDocuments = view === 'documents';
   return (
     <div className="topbar">
       <div className="brand">
@@ -2258,6 +2923,15 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
       <div className="meta">
         <span><span className="dot" style={{ background: dotColor }}></span>{label}</span>
       </div>
+      <button
+        className="iconbtn"
+        onClick={() => setView(inDocuments ? 'search' : 'documents')}
+        data-tip={inDocuments ? T('docs_back') : T('docs_nav')}
+        style={inDocuments ? { color: 'var(--accent)' } : null}
+      >
+        <Icon.folder />
+        <span style={{ fontSize: '11px' }}>{T('docs_nav')}</span>
+      </button>
       <button
         className="iconbtn"
         onClick={() => setView(inBookmarks ? 'search' : 'bookmarks')}
@@ -2350,7 +3024,7 @@ function FilterGroup({ title, items, selected, onToggle, onClear, clearLabel }) 
 }
 
 // ─── FiltersRail ──────────────────────────────────────────────────────────────
-function FiltersRail({ filters, setFilters, allResults }) {
+function FiltersRail({ filters, setFilters, allResults, tagsData, setTagsData }) {
   const T = useT();
   const { vendors, types, counts } = React.useMemo(() => {
     const c = { vendor: {}, type: {} };
@@ -2375,6 +3049,7 @@ function FiltersRail({ filters, setFilters, allResults }) {
     <aside className="filters-rail">
       <FilterGroup title={T('f_vendor')}    items={vendors.map(v => ({ id: v, label: v, count: counts.vendor[v] || 0 }))} selected={filters.vendor} onToggle={id => toggle('vendor', id)} onClear={() => clear('vendor')} clearLabel={T('f_clear')} />
       <FilterGroup title={T('f_spec_type')} items={types.map(t   => ({ id: t, label: t, count: counts.type[t]   || 0 }))} selected={filters.type}   onToggle={id => toggle('type',   id)} onClear={() => clear('type')}   clearLabel={T('f_clear')} />
+      <TagsFilterGroup filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} setTagsData={setTagsData} />
     </aside>
   );
 }
@@ -2538,8 +3213,14 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
   };
 
   const openFile = () => {
-    const url = fileUrl(false);
-    if (url) window.open(url, '_blank', 'noopener');
+    const fp = result.filepath || '';
+    const isPdf = fp.toLowerCase().endsWith('.pdf');
+    if (isPdf) {
+      const url = fileUrl(false);
+      if (url) window.open(url, '_blank', 'noopener');
+    } else if (result.doc_id) {
+      fetch('/api/open/' + encodeURIComponent(result.doc_id), { method: 'POST' });
+    }
   };
 
   const downloadFile = () => {
@@ -2838,11 +3519,14 @@ function App() {
   const [lang,     setLang]     = React.useState(saved.lang     || 'en');
   const [query,    setQuery]    = React.useState('');
   const [mode,     setMode]     = React.useState('hybrid');
-  const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [] });
+  const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [], tags: [] });
   const [selectedId, setSelectedId] = React.useState(null);
   const [sortKey,  setSortKey]  = React.useState('score');
   const [cardMode, setCardMode] = React.useState(saved.cardMode || 'detailed');
   const [totalMs, setTotalMs]   = React.useState(0);
+
+  // Tags data (custom tags + assignments, persisted in localStorage)
+  const [tagsData, setTagsData] = React.useState(loadTagsData);
 
   // API state
   const [results,     setResults]     = React.useState([]);
@@ -2851,7 +3535,7 @@ function App() {
   const [hasSearched, setHasSearched] = React.useState(false);
   const [status,      setStatus]      = React.useState({ ok: false, total_documents: 0, total_chunks: 0, collection_points: 0 });
 
-  // View routing: 'search' (default) or 'bookmarks'
+  // View routing: 'search' (default), 'bookmarks', or 'documents'
   const [view, setView] = React.useState('search');
 
   // Rail resize (left: filters | results)
@@ -2988,12 +3672,22 @@ function App() {
     let rs = allResults.filter(r => {
       if (filters.vendor.length && !filters.vendor.includes(r.vendor)) return false;
       if (filters.type.length   && !filters.type.includes(r.type))     return false;
+      if (filters.tags && filters.tags.length) {
+        const folder = getFolderName(r.filepath);
+        const assigned = tagsData.assignments[r.doc_id] || [];
+        const match = filters.tags.some(key => {
+          if (key.startsWith('folder:')) return folder === key.slice(7);
+          if (key.startsWith('custom:')) return assigned.includes(key.slice(7));
+          return false;
+        });
+        if (!match) return false;
+      }
       return true;
     });
     if      (sortKey === 'name') rs = [...rs].sort((a, b) => a.spec.localeCompare(b.spec));
     else                         rs = [...rs].sort((a, b) => b.score - a.score);
     return rs;
-  }, [filters, sortKey, allResults]);
+  }, [filters, sortKey, allResults, tagsData]);
 
   React.useEffect(() => {
     if (filtered.length && !filtered.find(r => r.id === selectedId)) {
@@ -3006,6 +3700,8 @@ function App() {
   const prefsTitle = lang === 'zh' ? '偏好設定' : 'Preferences';
 
   const inBookmarks = view === 'bookmarks';
+  const inDocuments = view === 'documents';
+  const inSearch    = !inBookmarks && !inDocuments;
 
   return (
     <LangCtx.Provider value={lang}>
@@ -3018,10 +3714,17 @@ function App() {
           view={view} setView={setView}
           bookmarkCount={bookmarkCount}
         />
-        {!inBookmarks && <SearchRow query={query} setQuery={setQuery} mode={mode} setMode={setMode} onSearch={onSearch} />}
-        {!inBookmarks && <TopFilters filters={filters} setFilters={setFilters} allResults={allResults} />}
-        <div className={`main ${(!inBookmarks && !hasSearched) ? 'empty-state' : ''}`}>
-          {inBookmarks ? (
+        {inSearch && <SearchRow query={query} setQuery={setQuery} mode={mode} setMode={setMode} onSearch={onSearch} />}
+        {inSearch && <TopFilters filters={filters} setFilters={setFilters} allResults={allResults} />}
+        <div className={`main ${(inSearch && !hasSearched) ? 'empty-state' : ''}`}>
+          {inDocuments ? (
+            <DocumentsView
+              onBack={() => setView('search')}
+              tagsData={tagsData}
+              setTagsData={setTagsData}
+              watchedDir={status.watched_docs_dir || ''}
+            />
+          ) : inBookmarks ? (
             <BookmarksView
               bookmarks={bookmarks}
               setBookmarks={setBookmarks}
@@ -3050,7 +3753,7 @@ function App() {
             </div>
           ) : (
             <>
-              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} />
+              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} setTagsData={setTagsData} />
               <div className="resizer" onMouseDown={onResizerMouseDown}>
                 <div ref={resizerPillRef} className="resizer-pill" />
               </div>

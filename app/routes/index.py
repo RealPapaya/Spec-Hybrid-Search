@@ -5,15 +5,16 @@ GET  /api/file/{doc_id}   — serve the original document (inline or download)
 """
 from __future__ import annotations
 import logging
+import os
 import sqlite3
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.models import IndexResponse, StatusResponse
 from app.config import DB_PATH, WATCHED_DOCS_DIR
-from app.services.fts import get_stats
+from app.services.fts import get_stats, get_all_documents
 from app.services.qdrant_store import collection_point_count
 from indexer.pipeline import index_all
 
@@ -50,6 +51,13 @@ async def get_status():
         collection_points=collection_point_count(),
         watched_docs_dir=str(WATCHED_DOCS_DIR),
     )
+
+
+@router.get("/documents")
+async def list_documents():
+    """Return all indexed documents with metadata."""
+    docs = get_all_documents()
+    return {"documents": docs, "total": len(docs)}
 
 
 # ── File serving ──────────────────────────────────────────────────────────────
@@ -96,3 +104,25 @@ async def serve_file(doc_id: str, download: int = Query(0)):
         filename=filename,
         content_disposition_type=disposition,
     )
+
+
+@router.post("/open/{doc_id}")
+async def open_file_native(doc_id: str):
+    """Open a non-PDF file with the OS default application via os.startfile()."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        row = con.execute(
+            "SELECT filepath FROM documents WHERE doc_id = ?", (doc_id,)
+        ).fetchone()
+    finally:
+        con.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="doc_id not found")
+
+    path = Path(row[0])
+    if not path.is_file():
+        raise HTTPException(status_code=410, detail="file no longer on disk")
+
+    os.startfile(str(path))
+    return JSONResponse({"status": "ok"})
