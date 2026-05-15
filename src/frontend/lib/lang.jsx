@@ -19,6 +19,7 @@ var DICT = {
 
     // filters
     f_vendor: "Document",
+    f_explorer: "Explorer",
     f_spec_type: "File Type",
     f_category: "Category",
     f_score_range: "Score Range",
@@ -150,6 +151,7 @@ var DICT = {
     btn_search: "搜尋",
 
     f_vendor: "文件",
+    f_explorer: "檔案瀏覽",
     f_spec_type: "檔案類型",
     f_category: "分類",
     f_score_range: "分數範圍",

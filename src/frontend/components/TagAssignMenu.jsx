@@ -58,13 +58,6 @@ function TagAssignMenu({ doc_id, tagsData, setTagsData, anchorRect, onClose }) {
 
 function TagsFilterGroup({ filters, setFilters, allResults, tagsData }) {
   const T = useT();
-
-  const folderCounts = React.useMemo(() => {
-    const c = {};
-    allResults.forEach(r => { const f = getFolderName(r.filepath); if (f) c[f] = (c[f]||0)+1; });
-    return c;
-  }, [allResults]);
-  const folderNames = Object.keys(folderCounts).sort();
   const activeTags = filters.tags || [];
 
   const toggleTag = (key) => {
@@ -79,36 +72,16 @@ function TagsFilterGroup({ filters, setFilters, allResults, tagsData }) {
         {activeTags.length > 0 && <span className="clear" onClick={() => setFilters({ ...filters, tags: [] })}>{T('f_clear')}</span>}
       </div>
 
-      {folderNames.length > 0 && (
-        <>
-          <div className="fgroup-subsect">{T('docs_tags_folder')}</div>
-          {folderNames.map(f => {
-            const key = 'folder:' + f;
-            const on = activeTags.includes(key);
-            return (
-              <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
-                <div className="checkbox"><Icon.check /></div>
-                <span className="label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <svg viewBox="0 0 14 14" width="12" height="12" fill="currentColor" style={{ opacity: 0.6, flexShrink: 0 }}><path d="M1 2.5A1 1 0 0 1 2 1.5h3.1a1 1 0 0 1 .71.3l.69.7H12a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2.5z"/></svg>
-                  {f}
-                </span>
-                <span className="count">{folderCounts[f]}</span>
-              </div>
-            );
-          })}
-        </>
-      )}
-
       {tagsData.customTags.length > 0 && (
         <>
-          <div className="fgroup-subsect" style={{ paddingTop: folderNames.length ? 8 : 0 }}>{T('docs_tags_custom')}</div>
           {tagsData.customTags.map(tag => {
             const key = 'custom:' + tag.id;
             const on = activeTags.includes(key);
             return (
-              <div key={key} className={'fitem' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
-                <div className="checkbox"><Icon.check /></div>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tag.color, flexShrink: 0, display: 'inline-block' }}></span>
+              <div key={key} className={'fitem fitem-dim' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
+                <span className="fitem-ico">
+                  <span className="fitem-dot" style={{ background: tag.color }}></span>
+                </span>
                 <span className="label">{tag.name}</span>
               </div>
             );

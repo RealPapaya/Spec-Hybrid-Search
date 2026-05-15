@@ -93,14 +93,31 @@ function DocumentIcon({ name, ext, className, fallbackText }) {
   );
 }
 
+function isDocIndexed(doc) {
+  return !doc.index_status || doc.index_status === 'indexed';
+}
+
+function canOpenDoc(doc) {
+  return isDocIndexed(doc) || (doc.chunk_count || 0) > 0;
+}
+
+function indexStatusLabel(doc, lang) {
+  if (isDocIndexed(doc)) return '';
+  if ((doc.chunk_count || 0) > 0) return lang === 'zh' ? '更新索引中' : 'Updating index';
+  return lang === 'zh' ? '索引中' : 'indexing';
+}
+
 function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
+  const lang = React.useContext(LangCtx);
   const [newName, setNewName] = React.useState('');
   const [addInputVisible, setAddInputVisible] = React.useState(false);
   const addInputRef = React.useRef(null);
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
   const availableTags = tagsData.customTags.filter(t => !assigned.includes(t.id));
+  const canOpen = canOpenDoc(doc);
+  const statusLabel = indexStatusLabel(doc, lang);
 
   const setDocTags = (nextIds) => {
     const assignments = { ...(tagsData.assignments || {}) };
@@ -142,9 +159,11 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
   return (
     <div className="file-action-panel" onClick={e => e.stopPropagation()}>
       {/* Open button */}
-      <button className="iconbtn" onClick={() => onOpen(doc)}>
+      <button className="iconbtn" onClick={() => onOpen(doc)} disabled={!canOpen} data-tip={canOpen ? doc.filepath : indexStatusLabel(doc, lang)}>
         <Icon.external /> {T('docs_open')}
       </button>
+
+      {statusLabel && <span className="index-pill pending">{statusLabel}</span>}
 
       {allowTagEdit && (
         <>
@@ -209,18 +228,21 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
 }
 
 function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
+  const lang = React.useContext(LangCtx);
   const [expanded, setExpanded] = React.useState(false);
   const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
+  const statusLabel = indexStatusLabel(doc, lang);
   return (
     <div className={'explorer-file-item' + (expanded ? ' expanded' : '')}>
-      <div className="explorer-file-row" onClick={() => setExpanded(prev => !prev)}>
+      <div className={'explorer-file-row' + (statusLabel ? ' indexing' : '')} onClick={() => setExpanded(prev => !prev)}>
         <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
           <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <DocumentIcon ext={ext} className="doc-tree-icon" />
         <span className="file-name" title={doc.filepath}>{doc.filename}</span>
+        {statusLabel && <span className="index-pill pending">{statusLabel}</span>}
         <div className="file-tags">
           {assignedTags.slice(0,2).map(tag => (
             <span key={tag.id} className="tag-pill tag-pill-custom" style={{ background: tag.color, maxWidth: 64 }}>{tag.name}</span>
@@ -262,6 +284,7 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
 
 function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
+  const lang = React.useContext(LangCtx);
   const [expanded, setExpanded] = React.useState(false);
   const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
   const folder = getFolderName(doc.filepath);
@@ -270,8 +293,9 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const sizeStr = doc.file_size ? (doc.file_size >= 1048576 ? (doc.file_size/1048576).toFixed(1)+' MB' : Math.round(doc.file_size/1024)+' KB') : '';
   const extColors = { PDF: ['#ef4444','#fef2f2'], DOC: ['#3b82f6','#eff6ff'], DOCX: ['#3b82f6','#eff6ff'], XLS: ['#10b981','#ecfdf5'], XLSX: ['#10b981','#ecfdf5'], PPT: ['#f59e0b','#fffbeb'], PPTX: ['#f59e0b','#fffbeb'] };
   const [fg, bg] = extColors[ext] || ['var(--fg-faint)','var(--bg-soft)'];
+  const statusLabel = indexStatusLabel(doc, lang);
   return (
-    <div className={'doc-card' + (expanded ? ' expanded' : '')} onClick={() => setExpanded(prev => !prev)}>
+    <div className={'doc-card' + (expanded ? ' expanded' : '') + (statusLabel ? ' indexing' : '')} onClick={() => setExpanded(prev => !prev)}>
       <div className="doc-card-main">
         <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
           <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -285,6 +309,7 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
             {folder && <><span style={{ color: 'var(--accent)' }}>{folder}</span><span className="sep">·</span></>}
             {sizeStr && <><span>{sizeStr}</span>{doc.chunk_count > 0 && <span className="sep">·</span>}</>}
             {doc.chunk_count > 0 && <span>{doc.chunk_count} {T('docs_chunks')}</span>}
+            {statusLabel && <span className="index-pill pending">{statusLabel}</span>}
           </div>
           {(folder || assignedTags.length > 0) && (
             <div className="doc-tags">
@@ -315,12 +340,25 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const [filterText, setFilterText] = React.useState('');
 
   const fetchDocs = React.useCallback(() => {
-    return fetch('/api/documents').then(r => r.json()).then(d => { setDocs(d.documents || []); }).catch(() => {});
+    return fetch('/api/documents')
+      .then(r => r.json())
+      .then(d => {
+        const nextDocs = d.documents || [];
+        setDocs(nextDocs);
+        return nextDocs;
+      })
+      .catch(() => []);
   }, []);
 
   React.useEffect(() => {
     fetchDocs().finally(() => setLoading(false));
   }, [fetchDocs]);
+
+  React.useEffect(() => {
+    if (!docs.some(doc => !isDocIndexed(doc))) return;
+    const timer = setInterval(fetchDocs, 2000);
+    return () => clearInterval(timer);
+  }, [docs, fetchDocs]);
 
   // Trigger a background re-index, then refresh the document list.
   const handleRefresh = React.useCallback(async () => {
@@ -328,8 +366,6 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     setRefreshing(true);
     try {
       await fetch('/api/index', { method: 'POST' });
-      // Poll until the index job settles (up to ~10 s), then reload the list.
-      await new Promise(resolve => setTimeout(resolve, 2000));
       await fetchDocs();
     } finally {
       setRefreshing(false);

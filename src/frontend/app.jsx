@@ -9,7 +9,7 @@ function App() {
   const [lang,     setLang]     = React.useState(saved.lang     || 'en');
   const [query,    setQuery]    = React.useState('');
   const [mode,     setMode]     = React.useState('hybrid');
-  const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [], tags: [] });
+  const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [], tags: [], folder: [] });
   const [selectedId, setSelectedId] = React.useState(null);
   const [sortKey,  setSortKey]  = React.useState('score');
   const [cardMode, setCardMode] = React.useState(saved.cardMode || 'detailed');
@@ -224,10 +224,18 @@ function App() {
     }
   }, [query, mode]);
 
+  const watchedDir = status.watched_docs_dir || '';
   const filtered = React.useMemo(() => {
+    const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : '';
     let rs = allResults.filter(r => {
       if (filters.vendor.length && !filters.vendor.includes(r.vendor)) return false;
       if (filters.type.length   && !filters.type.includes(r.type))     return false;
+      if (filters.folder && filters.folder.length) {
+        const fp = (r.filepath || '').replace(/\\/g, '/');
+        const rel = (base && fp.startsWith(base)) ? fp.slice(base.length) : fp;
+        const match = filters.folder.some(prefix => prefix === '' ? true : (rel === prefix || rel.startsWith(prefix + '/')));
+        if (!match) return false;
+      }
       if (filters.tags && filters.tags.length) {
         const folder = getFolderName(r.filepath);
         const assigned = tagsData.assignments[r.doc_id] || [];
@@ -243,7 +251,7 @@ function App() {
     if      (sortKey === 'name') rs = [...rs].sort((a, b) => a.spec.localeCompare(b.spec));
     else                         rs = [...rs].sort((a, b) => b.score - a.score);
     return rs;
-  }, [filters, sortKey, allResults, tagsData]);
+  }, [filters, sortKey, allResults, tagsData, watchedDir]);
 
   React.useEffect(() => {
     if (filtered.length && !filtered.find(r => r.id === selectedId)) {
@@ -279,7 +287,7 @@ function App() {
               onBack={() => setView('search')}
               tagsData={tagsData}
               setTagsData={setTagsData}
-              watchedDir={status.watched_docs_dir || ''}
+              watchedDir={watchedDir}
             />
           ) : inBookmarks ? (
             <BookmarksView
@@ -310,7 +318,7 @@ function App() {
             </div>
           ) : (
             <>
-              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} />
+              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} watchedDir={watchedDir} />
               <div className="resizer" onMouseDown={onResizerMouseDown}>
                 <div ref={resizerPillRef} className="resizer-pill" />
               </div>

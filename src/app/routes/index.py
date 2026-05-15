@@ -5,6 +5,7 @@ GET  /api/file/{doc_id}   — serve the original document (inline or download)
 """
 from __future__ import annotations
 import logging
+import hashlib
 import os
 import sqlite3
 from pathlib import Path
@@ -16,10 +17,15 @@ from app.models import IndexResponse, StatusResponse
 from app.config import DB_PATH, WATCHED_DOCS_DIR
 from app.services.fts import get_stats, get_all_documents
 from app.services.qdrant_store import collection_point_count
+from indexer.extractor import SUPPORTED_EXTENSIONS
 from indexer.pipeline import index_all
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _doc_id(filepath: str) -> str:
+    return hashlib.sha256(filepath.encode()).hexdigest()[:16]
 
 
 @router.post("/index", response_model=IndexResponse)
@@ -55,8 +61,44 @@ async def get_status():
 
 @router.get("/documents")
 async def list_documents():
-    """Return all indexed documents with metadata."""
-    docs = get_all_documents()
+    """Return indexed documents plus supported files found on disk.
+
+    Large files can take a while to parse/embed. Including disk-discovered
+    files lets the UI show that a file was found before indexing finishes.
+    """
+    docs_by_path = {
+        doc["filepath"]: {**doc, "index_status": "indexed"}
+        for doc in get_all_documents()
+    }
+
+    WATCHED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    for path in WATCHED_DOCS_DIR.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            continue
+
+        resolved = str(path.resolve())
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+
+        existing = docs_by_path.get(resolved)
+        if existing:
+            if abs((existing.get("modified_at") or 0) - stat.st_mtime) >= 1.0:
+                existing["index_status"] = "pending"
+            continue
+
+        docs_by_path[resolved] = {
+            "doc_id": _doc_id(resolved),
+            "filepath": resolved,
+            "filename": path.name,
+            "file_size": stat.st_size,
+            "modified_at": stat.st_mtime,
+            "chunk_count": 0,
+            "index_status": "pending",
+        }
+
+    docs = sorted(docs_by_path.values(), key=lambda doc: doc["filepath"])
     return {"documents": docs, "total": len(docs)}
 
 
