@@ -229,7 +229,7 @@ function App() {
     const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : '';
     let rs = allResults.filter(r => {
       if (filters.vendor.length && !filters.vendor.includes(r.vendor)) return false;
-      if (filters.type.length   && !filters.type.includes(r.type))     return false;
+      if (filters.type.length   && filters.type.includes(r.type))      return false;
       if (filters.folder && filters.folder.length) {
         const fp = (r.filepath || '').replace(/\\/g, '/');
         const rel = (base && fp.startsWith(base)) ? fp.slice(base.length) : fp;
@@ -237,14 +237,12 @@ function App() {
         if (!match) return false;
       }
       if (filters.tags && filters.tags.length) {
-        const folder = getFolderName(r.filepath);
         const assigned = tagsData.assignments[r.doc_id] || [];
-        const match = filters.tags.some(key => {
-          if (key.startsWith('folder:')) return folder === key.slice(7);
+        const excluded = filters.tags.some(key => {
           if (key.startsWith('custom:')) return assigned.includes(key.slice(7));
           return false;
         });
-        if (!match) return false;
+        if (excluded) return false;
       }
       return true;
     });

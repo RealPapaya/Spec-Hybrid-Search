@@ -76,7 +76,7 @@ function TagsFilterGroup({ filters, setFilters, allResults, tagsData }) {
         <>
           {tagsData.customTags.map(tag => {
             const key = 'custom:' + tag.id;
-            const on = activeTags.includes(key);
+            const on = !activeTags.includes(key);
             return (
               <div key={key} className={'fitem fitem-dim' + (on ? ' on' : '')} onClick={() => toggleTag(key)}>
                 <span className="fitem-ico">

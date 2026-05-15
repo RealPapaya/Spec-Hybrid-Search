@@ -21,8 +21,9 @@ function FilterGroup({ title, items, selected, onToggle, onClear, clearLabel }) 
   );
 }
 
-// Dimmable (lit/dark) filter group: no checkbox; each item is colored when on,
-// grayscale when off. Items may provide a custom `icon` node.
+// Dimmable (lit/dark) filter group: no checkbox; lit (colored) by default,
+// grayscale when excluded. `selected` is an *exclusion* list; clicking toggles
+// inclusion/exclusion. Items may provide a custom `icon` node.
 function DimmableFilterGroup({ title, items, selected, onToggle, onClear, clearLabel }) {
   return (
     <div className="fgroup">
@@ -31,7 +32,7 @@ function DimmableFilterGroup({ title, items, selected, onToggle, onClear, clearL
         {selected.length > 0 && <span className="clear" onClick={onClear}>{clearLabel}</span>}
       </div>
       {items.map(it => {
-        const on = selected.includes(it.id);
+        const on = !selected.includes(it.id);
         return (
           <div key={it.id} className={'fitem fitem-dim' + (on ? ' on' : '')} onClick={() => onToggle(it.id)}>
             {it.icon && <span className="fitem-ico">{it.icon}</span>}
@@ -44,8 +45,13 @@ function DimmableFilterGroup({ title, items, selected, onToggle, onClear, clearL
   );
 }
 
+function isUnderSelected(relPath, selected) {
+  if (selected.includes(relPath)) return true;
+  return selected.some(p => p && relPath.startsWith(p + '/'));
+}
+
 function ExplorerFileNode({ name, relPath, depth, selected, onToggle }) {
-  const on = selected.includes(relPath);
+  const on = isUnderSelected(relPath, selected);
   const ext = (name.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
   return (
     <div className="exf-node" style={{ paddingLeft: depth * 10 }}>
@@ -60,11 +66,14 @@ function ExplorerFileNode({ name, relPath, depth, selected, onToggle }) {
   );
 }
 
-function ExplorerFolderNode({ name, relPath, node, depth, selected, onToggle }) {
+function ExplorerFolderNode({ name, relPath, node, depth, selected, onToggle, expandSignal }) {
   const [open, setOpen] = React.useState(true);
+  React.useEffect(() => {
+    if (expandSignal && expandSignal.version > 0) setOpen(expandSignal.value);
+  }, [expandSignal && expandSignal.version]);
   const childEntries = Object.entries(node.children).sort(([a],[b]) => a.localeCompare(b));
   const files = (node.files || []).slice().sort((a, b) => a.name.localeCompare(b.name));
-  const on = selected.includes(relPath);
+  const on = isUnderSelected(relPath, selected);
   const count = node.count;
   const hasChildren = childEntries.length > 0 || files.length > 0;
   return (
@@ -96,6 +105,7 @@ function ExplorerFolderNode({ name, relPath, node, depth, selected, onToggle }) 
               depth={depth + 1}
               selected={selected}
               onToggle={onToggle}
+              expandSignal={expandSignal}
             />
           ))}
           {files.map(f => (
@@ -141,12 +151,34 @@ function ExplorerFilterGroup({ title, allResults, watchedDir, selected, onToggle
 
   const childEntries = Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b));
   const rootFiles = tree.files.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const [expandSignal, setExpandSignal] = React.useState({ version: 0, value: true });
+  const expandAll   = () => setExpandSignal(s => ({ version: s.version + 1, value: true }));
+  const collapseAll = () => setExpandSignal(s => ({ version: s.version + 1, value: false }));
+  const hasFolders = childEntries.length > 0;
 
   return (
     <div className="fgroup">
       <div className="fgroup-title">
         <span>{title}</span>
-        {selected.length > 0 && <span className="clear" onClick={onClear}>{clearLabel}</span>}
+        <span className="exf-actions">
+          {hasFolders && (
+            <>
+              <span className="exf-action" onClick={expandAll} title="Expand all">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <rect x="1.5" y="1.5" width="9" height="9" rx="1.5"/>
+                  <path d="M3.5 6h5M6 3.5v5"/>
+                </svg>
+              </span>
+              <span className="exf-action" onClick={collapseAll} title="Collapse all">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <rect x="1.5" y="1.5" width="9" height="9" rx="1.5"/>
+                  <path d="M3.5 6h5"/>
+                </svg>
+              </span>
+            </>
+          )}
+          {selected.length > 0 && <span className="clear" onClick={onClear}>{clearLabel}</span>}
+        </span>
       </div>
       {tree.count === 0 ? (
         <div className="exf-empty">—</div>
@@ -161,6 +193,7 @@ function ExplorerFilterGroup({ title, allResults, watchedDir, selected, onToggle
               depth={0}
               selected={selected}
               onToggle={onToggle}
+              expandSignal={expandSignal}
             />
           ))}
           {rootFiles.map(f => (

@@ -554,6 +554,25 @@ body {
 }
 
 /* Explorer filter tree (sidebar) */
+.exf-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.exf-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  color: var(--fg-faint);
+  border-radius: 3px;
+}
+.exf-action:hover {
+  color: var(--accent);
+  background: var(--bg-soft);
+}
 .exf-empty {
   font-size: 11px;
   color: var(--fg-faint);
