@@ -61,10 +61,10 @@ var DICT = {
     page_short: "p.",
 
     // documents view
-    docs_nav:        "Files",
+    docs_nav:        "Tag manager",
     docs_back:       "Back to search",
-    docs_list:       "List view",
-    docs_explorer:   "Explorer view",
+    docs_list:       "View as list",
+    docs_explorer:   "View as tree",
     docs_empty:      "No documents indexed yet",
     docs_empty_hint: "Drop PDF, DOCX, XLSX, or PPTX files into the watched folder to start indexing.",
     docs_search:     "Filter files...",
@@ -78,6 +78,10 @@ var DICT = {
     docs_open:       "Open",
     docs_all_files:  "All files",
     docs_refresh:    "Scan for new files",
+    docs_tag_mode:   "Tag mode",
+    docs_auto_tags:  "By subfolder",
+    docs_manual_tags: "Individual",
+    docs_apply_folder_tags: "Apply folder tags",
 
     // bookmarks page
     bookmarks_title:    "Bookmarks",
@@ -173,10 +177,10 @@ var DICT = {
     download_pdf: "下載文件",
     page_short: "第",
 
-    docs_nav:        "檔案",
+    docs_nav:        "Tag manager",
     docs_back:       "返回搜尋",
-    docs_list:       "清單檢視",
-    docs_explorer:   "樹狀檢視",
+    docs_list:       "View as list",
+    docs_explorer:   "View as tree",
     docs_empty:      "尚未索引任何文件",
     docs_empty_hint: "將 PDF、DOCX、XLSX 或 PPTX 拖入監看資料夾,系統會自動開始索引。",
     docs_search:     "過濾檔案...",
@@ -190,6 +194,10 @@ var DICT = {
     docs_open:       "開啟",
     docs_all_files:  "全部檔案",
     docs_refresh:    "掃描新檔案",
+    docs_tag_mode:   "標籤模式",
+    docs_auto_tags:  "依子目錄",
+    docs_manual_tags: "個別設定",
+    docs_apply_folder_tags: "套用子目錄標籤",
 
     bookmarks_title:    "我的收藏",
     bookmarks_nav:      "收藏",

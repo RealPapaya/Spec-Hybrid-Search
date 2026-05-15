@@ -21,7 +21,7 @@ function FilterGroup({ title, items, selected, onToggle, onClear, clearLabel }) 
   );
 }
 
-function FiltersRail({ filters, setFilters, allResults, tagsData, setTagsData }) {
+function FiltersRail({ filters, setFilters, allResults, tagsData }) {
   const T = useT();
   const { vendors, types, counts } = React.useMemo(() => {
     const c = { vendor: {}, type: {} };
@@ -46,7 +46,7 @@ function FiltersRail({ filters, setFilters, allResults, tagsData, setTagsData })
     <aside className="filters-rail">
       <FilterGroup title={T('f_vendor')}    items={vendors.map(v => ({ id: v, label: v, count: counts.vendor[v] || 0 }))} selected={filters.vendor} onToggle={id => toggle('vendor', id)} onClear={() => clear('vendor')} clearLabel={T('f_clear')} />
       <FilterGroup title={T('f_spec_type')} items={types.map(t   => ({ id: t, label: t, count: counts.type[t]   || 0 }))} selected={filters.type}   onToggle={id => toggle('type',   id)} onClear={() => clear('type')}   clearLabel={T('f_clear')} />
-      <TagsFilterGroup filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} setTagsData={setTagsData} />
+      <TagsFilterGroup filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} />
     </aside>
   );
 }

@@ -4,7 +4,7 @@ function _countFiles(node) {
   return node.files.length + Object.values(node.children).reduce((s, c) => s + _countFiles(c), 0);
 }
 
-function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen }) {
+function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
   const [menuAnchor, setMenuAnchor] = React.useState(null);
   const assigned = tagsData.assignments[doc.doc_id] || [];
@@ -22,16 +22,18 @@ function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen }) {
         <button className="iconbtn" style={{ height: 20, padding: '0 5px' }} onClick={e => { e.stopPropagation(); onOpen(doc); }} data-tip={T('docs_open')}>
           <Icon.external />
         </button>
-        <button className="iconbtn" style={{ height: 20, padding: '0 5px' }} onClick={e => { e.stopPropagation(); setMenuAnchor(e.currentTarget.getBoundingClientRect()); }} data-tip={T('docs_tag_assign')}>
-          <Icon.tag />
-        </button>
+        {allowTagEdit && (
+          <button className="iconbtn" style={{ height: 20, padding: '0 5px' }} onClick={e => { e.stopPropagation(); setMenuAnchor(e.currentTarget.getBoundingClientRect()); }} data-tip={T('docs_tag_assign')}>
+            <Icon.tag />
+          </button>
+        )}
       </div>
-      {menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
+      {allowTagEdit && menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
     </div>
   );
 }
 
-function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onOpenFile }) {
+function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onOpenFile, allowTagEdit = true }) {
   const [open, setOpen] = React.useState(depth === 0);
   const childEntries = Object.entries(children).sort(([a],[b]) => a.localeCompare(b));
   const totalCount = _countFiles({ children, files });
@@ -48,10 +50,10 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
       {open && (
         <div className="explorer-children">
           {childEntries.map(([n, node]) => (
-            <ExplorerNode key={n} name={n} {...node} depth={depth+1} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={onOpenFile} />
+            <ExplorerNode key={n} name={n} {...node} depth={depth+1} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={onOpenFile} allowTagEdit={allowTagEdit} />
           ))}
           {files.map(doc => (
-            <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpenFile} />
+            <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpenFile} allowTagEdit={allowTagEdit} />
           ))}
         </div>
       )}
@@ -59,7 +61,7 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
   );
 }
 
-function DocCard({ doc, tagsData, setTagsData, onOpen }) {
+function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
   const [menuAnchor, setMenuAnchor] = React.useState(null);
   const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
@@ -90,9 +92,9 @@ function DocCard({ doc, tagsData, setTagsData, onOpen }) {
       </div>
       <div className="doc-actions">
         <button className="iconbtn" style={{ height: 26 }} onClick={() => onOpen(doc)} data-tip={T('docs_open')}><Icon.external /></button>
-        <button className="iconbtn" style={{ height: 26 }} onClick={e => setMenuAnchor(e.currentTarget.getBoundingClientRect())} data-tip={T('docs_tag_assign')}><Icon.tag /></button>
+        {allowTagEdit && <button className="iconbtn" style={{ height: 26 }} onClick={e => setMenuAnchor(e.currentTarget.getBoundingClientRect())} data-tip={T('docs_tag_assign')}><Icon.tag /></button>}
       </div>
-      {menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
+      {allowTagEdit && menuAnchor && <TagAssignMenu doc_id={doc.doc_id} tagsData={tagsData} setTagsData={setTagsData} anchorRect={menuAnchor} onClose={() => setMenuAnchor(null)} />}
     </div>
   );
 }
@@ -103,7 +105,9 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const [docs, setDocs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState('list');
+  const [viewMode, setViewMode] = React.useState('explorer');
+  const [tagMode, setTagMode] = React.useState('manual');
+  const [tagApplyMessage, setTagApplyMessage] = React.useState('');
   const [filterText, setFilterText] = React.useState('');
   const [activeTagFilter, setActiveTagFilter] = React.useState([]);
 
@@ -151,6 +155,46 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   }, [docs]);
 
   const openDoc = (doc) => window.open('/api/file/' + encodeURIComponent(doc.doc_id), '_blank', 'noopener');
+
+  const applyFolderTags = React.useCallback(() => {
+    const customTags = [...tagsData.customTags];
+    const assignments = {};
+    Object.entries(tagsData.assignments || {}).forEach(([docId, ids]) => {
+      assignments[docId] = Array.isArray(ids) ? [...ids] : [];
+    });
+
+    const tagByName = new Map(customTags.map(tag => [tag.name.trim().toLowerCase(), tag.id]));
+    let created = 0;
+    let changedDocs = 0;
+
+    docs.forEach(doc => {
+      const folder = getFolderName(doc.filepath);
+      const key = folder.trim().toLowerCase();
+      if (!key) return;
+
+      let tagId = tagByName.get(key);
+      if (!tagId) {
+        tagId = Date.now().toString(36) + Math.random().toString(36).slice(2,5) + created;
+        const color = TAG_COLORS[customTags.length % TAG_COLORS.length];
+        customTags.push({ id: tagId, name: folder, color });
+        tagByName.set(key, tagId);
+        created += 1;
+      }
+
+      const cur = assignments[doc.doc_id] || [];
+      if (!cur.includes(tagId)) {
+        assignments[doc.doc_id] = [...cur, tagId];
+        changedDocs += 1;
+      }
+    });
+
+    const nd = { ...tagsData, customTags, assignments };
+    setTagsData(nd);
+    saveTagsData(nd);
+    setTagApplyMessage(lang === 'zh'
+      ? `已套用 ${changedDocs} 份檔案，新增 ${created} 個標籤`
+      : `Applied ${changedDocs} files, created ${created} tags`);
+  }, [docs, tagsData, setTagsData, lang]);
 
   const tree = React.useMemo(() => {
     const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : null;
@@ -220,6 +264,19 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         {/* Left tag sidebar */}
         <div style={{ width: 196, flexShrink: 0, borderRight: '1px solid var(--border)', background: 'var(--bg-elev)', overflowY: 'auto', padding: '4px 0' }}>
+          <div className="fgroup">
+            <div className="fgroup-title"><span>{T('docs_tag_mode')}</span></div>
+            <div className="tag-mode-toggle">
+              <button className={tagMode === 'auto' ? 'on' : ''} onClick={() => setTagMode('auto')}>{T('docs_auto_tags')}</button>
+              <button className={tagMode === 'manual' ? 'on' : ''} onClick={() => setTagMode('manual')}>{T('docs_manual_tags')}</button>
+            </div>
+            {tagMode === 'auto' && (
+              <>
+                <button className="tag-manager-apply" onClick={applyFolderTags}>{T('docs_apply_folder_tags')}</button>
+                {tagApplyMessage && <div className="tag-manager-message">{tagApplyMessage}</div>}
+              </>
+            )}
+          </div>
           {Object.keys(folderCounts).length > 0 && (
             <div className="fgroup">
               <div className="fgroup-title"><span>{T('docs_tags_folder')}</span></div>
@@ -250,20 +307,22 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
                 </div>
               );
             })}
-            <div className="new-tag-row" style={{ paddingTop: 8 }}>
-              <input placeholder={lang === 'zh' ? '新增標籤...' : 'New tag...'}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    const name = e.target.value.trim();
-                    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-                    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
-                    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name, color }] };
-                    setTagsData(nd); saveTagsData(nd); e.target.value = '';
-                  }
-                  e.stopPropagation();
-                }}
-              />
-            </div>
+            {tagMode === 'manual' && (
+              <div className="new-tag-row" style={{ paddingTop: 8 }}>
+                <input placeholder={lang === 'zh' ? '新增標籤...' : 'New tag...'}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && e.target.value.trim()) {
+                      const name = e.target.value.trim();
+                      const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+                      const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
+                      const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name, color }] };
+                      setTagsData(nd); saveTagsData(nd); e.target.value = '';
+                    }
+                    e.stopPropagation();
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -284,16 +343,16 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
           ) : viewMode === 'explorer' ? (
             <div className="explorer-root">
               {Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b)).map(([n, node]) => (
-                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} />
+                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} allowTagEdit={tagMode === 'manual'} />
               ))}
               {tree.files.map(doc => (
-                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} />
+                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={tagMode === 'manual'} />
               ))}
             </div>
           ) : (
             <div className="doc-grid">
               {filtered.map(doc => (
-                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} />
+                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={tagMode === 'manual'} />
               ))}
             </div>
           )}

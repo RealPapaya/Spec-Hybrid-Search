@@ -243,7 +243,7 @@ function App() {
             </div>
           ) : (
             <>
-              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} setTagsData={setTagsData} />
+              <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} tagsData={tagsData} />
               <div className="resizer" onMouseDown={onResizerMouseDown}>
                 <div ref={resizerPillRef} className="resizer-pill" />
               </div>

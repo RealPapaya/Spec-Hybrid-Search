@@ -56,9 +56,8 @@ function TagAssignMenu({ doc_id, tagsData, setTagsData, anchorRect, onClose }) {
   );
 }
 
-function TagsFilterGroup({ filters, setFilters, allResults, tagsData, setTagsData }) {
+function TagsFilterGroup({ filters, setFilters, allResults, tagsData }) {
   const T = useT();
-  const [newName, setNewName] = React.useState('');
 
   const folderCounts = React.useMemo(() => {
     const c = {};
@@ -71,13 +70,6 @@ function TagsFilterGroup({ filters, setFilters, allResults, tagsData, setTagsDat
   const toggleTag = (key) => {
     const next = activeTags.includes(key) ? activeTags.filter(x => x !== key) : [...activeTags, key];
     setFilters({ ...filters, tags: next });
-  };
-  const createTag = () => {
-    const name = newName.trim(); if (!name) return;
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
-    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name, color }] };
-    setTagsData(nd); saveTagsData(nd); setNewName('');
   };
 
   return (
@@ -123,13 +115,6 @@ function TagsFilterGroup({ filters, setFilters, allResults, tagsData, setTagsDat
           })}
         </>
       )}
-
-      <div className="new-tag-row">
-        <input value={newName} onChange={e => setNewName(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { createTag(); e.stopPropagation(); } e.stopPropagation(); }}
-          placeholder={T('docs_new_tag')} />
-        <button onClick={createTag}>{T('docs_add')}</button>
-      </div>
     </div>
   );
 }
