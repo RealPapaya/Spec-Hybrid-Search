@@ -21,6 +21,8 @@ set "VENV_DIR=%DIR%.venv"
 set "VENV_PY=%VENV_DIR%\Scripts\python.exe"
 set "PROGRAMFILES_X86=%ProgramFiles(x86)%"
 set "PY="
+set "OLD_PY="
+set "OLD_VER="
 
 :: --- STEP 1: Locate a Python interpreter ------------------------------------
 :: Existing .venv is the fast path for returning users
@@ -29,41 +31,20 @@ if exist "%VENV_PY%" (
     goto :CHECK_VERSION
 )
 
-:: py launcher ships with every official Python 3.3+ on Windows
+:: py launcher ships with every official Python 3.3+ on Windows.
+:: Ask for specific compatible versions so an older default (for example 3.6)
+:: does not stop the search too early.
 where py >nul 2>&1
 if not errorlevel 1 (
-    for /f "delims=" %%i in ('py -3 -c "import sys;print(sys.executable)" 2^>nul') do (
-        set "PY=%%i"
-        goto :CHECK_VERSION
-    )
-)
-
-:: Plain `python` on PATH, skipping Windows Store stub aliases
-set "_FOUND=0"
-for /f "delims=" %%i in ('where python 2^>nul') do (
-    if "!_FOUND!"=="0" (
-        echo "%%i" | findstr /i "WindowsApps" >nul
-        if errorlevel 1 (
-            "%%i" -c "import sys" >nul 2>&1
-            if not errorlevel 1 (
+    for %%v in (3.13 3.12 3.11 3.10) do (
+        if not defined PY (
+            for /f "delims=" %%i in ('py -%%v -c "import sys;print(sys.executable)" 2^>nul') do (
                 set "PY=%%i"
-                set "_FOUND=1"
             )
         )
     )
+    if defined PY goto :CHECK_VERSION
 )
-if "!_FOUND!"=="1" goto :CHECK_VERSION
-
-for /f "delims=" %%i in ('where python3 2^>nul') do (
-    if "!_FOUND!"=="0" (
-        "%%i" -c "import sys" >nul 2>&1
-        if not errorlevel 1 (
-            set "PY=%%i"
-            set "_FOUND=1"
-        )
-    )
-)
-if "!_FOUND!"=="1" goto :CHECK_VERSION
 
 :: Standard installation directories -- checks Python 3.10 .. 3.13
 for %%v in (313 312 311 310) do (
@@ -83,6 +64,44 @@ for %%v in (313 312 311 310) do (
     )
 )
 
+:: Plain `python` on PATH, skipping Windows Store stub aliases. Keep scanning
+:: after old-but-working interpreters so a later compatible Python can win.
+set "_FOUND=0"
+for /f "delims=" %%i in ('where python 2^>nul') do (
+    if "!_FOUND!"=="0" (
+        echo "%%i" | findstr /i "WindowsApps" >nul
+        if errorlevel 1 (
+            "%%i" -c "import sys;sys.exit(0 if sys.version_info>=(3,10) else 1)" >nul 2>&1
+            if not errorlevel 1 (
+                set "PY=%%i"
+                set "_FOUND=1"
+            ) else (
+                if not defined OLD_PY (
+                    for /f "delims=" %%v in ('"%%i" --version 2^>^&1') do set "OLD_VER=%%v"
+                    set "OLD_PY=%%i"
+                )
+            )
+        )
+    )
+)
+if "!_FOUND!"=="1" goto :CHECK_VERSION
+
+for /f "delims=" %%i in ('where python3 2^>nul') do (
+    if "!_FOUND!"=="0" (
+        "%%i" -c "import sys;sys.exit(0 if sys.version_info>=(3,10) else 1)" >nul 2>&1
+        if not errorlevel 1 (
+            set "PY=%%i"
+            set "_FOUND=1"
+        ) else (
+            if not defined OLD_PY (
+                for /f "delims=" %%v in ('"%%i" --version 2^>^&1') do set "OLD_VER=%%v"
+                set "OLD_PY=%%i"
+            )
+        )
+    )
+)
+if "!_FOUND!"=="1" goto :CHECK_VERSION
+
 goto :NO_PYTHON
 
 :: --- STEP 2: Verify Python is 3.10 or newer ---------------------------------
@@ -95,6 +114,11 @@ if errorlevel 1 (
     echo  Found  : !_VER!
     echo  Path   : %PY%
     echo.
+    if /i "!PY!"=="%VENV_PY%" (
+        echo  The existing .venv was created with an older Python.
+        echo  Install Python 3.10 or newer, then delete .venv and run this again.
+        echo.
+    )
     echo  Download the latest Python from:
     echo    https://www.python.org/downloads/
     echo.
@@ -195,6 +219,12 @@ echo  ^|  Python Not Found                                ^|
 echo  +--------------------------------------------------+
 echo.
 echo   DocSense requires Python 3.10 or newer.
+if defined OLD_PY (
+    echo.
+    echo   Found an older Python, but it cannot run DocSense:
+    echo     !OLD_VER!
+    echo     !OLD_PY!
+)
 echo.
 echo   Download the latest Python:
 echo     https://www.python.org/downloads/

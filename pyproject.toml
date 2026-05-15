@@ -3,7 +3,7 @@ name = "docsense"
 version = "0.1.0"
 description = "Local enterprise document hybrid search system"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -35,7 +35,7 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
