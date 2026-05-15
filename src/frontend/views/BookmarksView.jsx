@@ -3,6 +3,7 @@
 function BookmarksView({ bookmarks, setBookmarks, onBack }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
+  const confirm = useConfirm();
   const items = React.useMemo(
     () => Object.entries(bookmarks)
       .map(([key, b]) => ({ key, ...b }))
@@ -17,11 +18,12 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
     saveBookmarks(next);
   };
 
-  const clearAll = () => {
+    const clearAll = async () => {
     const msg = lang === 'zh'
       ? `確定要清空全部 ${items.length} 筆收藏？`
       : `Clear all ${items.length} bookmarks?`;
-    if (window.confirm(msg)) {
+    const ok = await confirm(msg, { danger: true });
+    if (ok) {
       setBookmarks({});
       saveBookmarks({});
     }

@@ -240,6 +240,7 @@ function App() {
   const inSearch    = !inBookmarks && !inDocuments;
 
   return (
+    <ConfirmDialogProvider>
     <LangCtx.Provider value={lang}>
       <div className="app">
         <Topbar
@@ -403,6 +404,7 @@ function App() {
         </TweaksPanel>
       </div>
     </LangCtx.Provider>
+    </ConfirmDialogProvider>
   );
 }
 

@@ -7,6 +7,8 @@ function _countFiles(node) {
 function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
   const [newName, setNewName] = React.useState('');
+  const [addInputVisible, setAddInputVisible] = React.useState(false);
+  const addInputRef = React.useRef(null);
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
   const availableTags = tagsData.customTags.filter(t => !assigned.includes(t.id));
@@ -43,36 +45,73 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
     setNewName('');
   };
 
+  // Focus the add-tag input when it becomes visible
+  React.useEffect(() => {
+    if (addInputVisible && addInputRef.current) addInputRef.current.focus();
+  }, [addInputVisible]);
+
   return (
     <div className="file-action-panel" onClick={e => e.stopPropagation()}>
+      {/* Open button */}
       <button className="iconbtn" onClick={() => onOpen(doc)}>
         <Icon.external /> {T('docs_open')}
       </button>
+
       {allowTagEdit && (
         <>
-          <div className="file-action-tags">
-            {assignedTags.map(tag => (
-              <button key={tag.id} className="tag-action-chip on" onClick={() => removeTag(tag.id)} data-tip={T('docs_remove_tag')}>
-                <span style={{ background: tag.color }}></span>
-                {tag.name}
-                <Icon.trash />
-              </button>
-            ))}
-            {availableTags.map(tag => (
-              <button key={tag.id} className="tag-action-chip" onClick={() => addTag(tag.id)} data-tip={T('docs_add_tag')}>
-                <span style={{ background: tag.color }}></span>
-                {tag.name}
-              </button>
-            ))}
+          {/* Edit Tag button — hover reveals tag list flyout */}
+          <div className="fap-btn-wrap">
+            <button className="iconbtn">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9.5V12h2.5l6-6L8 3.5l-6 6z"/><path d="M10.5 1.5l2 2"/></svg>
+              {T('docs_edit_tag')}
+            </button>
+            <div className="fap-flyout fap-edit-flyout">
+              {tagsData.customTags.length === 0 && (
+                <div className="fap-flyout-empty">{T('docs_no_tags')}</div>
+              )}
+              {assignedTags.length > 0 && (
+                <div className="fap-flyout-sect">{T('docs_tags_assigned')}</div>
+              )}
+              {assignedTags.map(tag => (
+                <button key={tag.id} className="fap-tag-item on" onClick={() => removeTag(tag.id)}>
+                  <span className="fap-dot" style={{ background: tag.color }}></span>
+                  <span className="fap-tag-name">{tag.name}</span>
+                  <Icon.trash />
+                </button>
+              ))}
+              {availableTags.length > 0 && (
+                <div className="fap-flyout-sect" style={{ paddingTop: assignedTags.length ? 6 : 0 }}>{T('docs_tags_available')}</div>
+              )}
+              {availableTags.map(tag => (
+                <button key={tag.id} className="fap-tag-item" onClick={() => addTag(tag.id)}>
+                  <span className="fap-dot" style={{ background: tag.color }}></span>
+                  <span className="fap-tag-name">{tag.name}</span>
+                  <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="tag-assign-new inline">
-            <input
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') createAndAssignTag(); e.stopPropagation(); }}
-              placeholder={T('docs_new_tag')}
-            />
-            <button onClick={createAndAssignTag}>{T('docs_add')}</button>
+
+          {/* Add Tag button — hover reveals text input flyout */}
+          <div className="fap-btn-wrap">
+            <button className="iconbtn" onClick={() => setAddInputVisible(v => !v)}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>
+              {T('docs_add_tag')}
+            </button>
+            <div className={"fap-flyout fap-add-flyout" + (addInputVisible ? ' fap-add-visible' : '')}>
+              <input
+                ref={addInputRef}
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { createAndAssignTag(); setAddInputVisible(false); }
+                  if (e.key === 'Escape') setAddInputVisible(false);
+                  e.stopPropagation();
+                }}
+                placeholder={T('docs_new_tag')}
+              />
+              <button onClick={() => { createAndAssignTag(); setAddInputVisible(false); }}>{T('docs_add')}</button>
+            </div>
           </div>
         </>
       )}
@@ -173,6 +212,7 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
 function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
+  const confirm = useConfirm();
   const [docs, setDocs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -232,13 +272,14 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     saveTagsData(nd);
   }, [tagsData, setTagsData]);
 
-  const deleteTag = React.useCallback((tagId) => {
+  const deleteTag = React.useCallback(async (tagId) => {
     const tag = tagsData.customTags.find(t => t.id === tagId);
     if (!tag) return;
     const msg = lang === 'zh'
       ? `確定要刪除標籤「${tag.name}」？`
       : `Delete tag "${tag.name}"?`;
-    if (!window.confirm(msg)) return;
+    const ok = await confirm(msg, { danger: true });
+    if (!ok) return;
 
     const assignments = {};
     Object.entries(tagsData.assignments || {}).forEach(([docId, ids]) => {
@@ -252,13 +293,14 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     };
     setTagsData(nd);
     saveTagsData(nd);
-  }, [tagsData, setTagsData, lang]);
+  }, [tagsData, setTagsData, lang, confirm]);
 
-  const applyFolderTags = React.useCallback(() => {
+  const applyFolderTags = React.useCallback(async () => {
     const msg = lang === 'zh'
       ? '確定要依子目錄套用標籤？'
       : 'Apply folder tags to all files?';
-    if (!window.confirm(msg)) return;
+    const ok = await confirm(msg);
+    if (!ok) return;
 
     const customTags = [...tagsData.customTags];
     const assignments = {};
@@ -297,19 +339,20 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     setTagApplyMessage(lang === 'zh'
       ? `已套用 ${changedDocs} 份檔案，新增 ${created} 個標籤`
       : `Applied ${changedDocs} files, created ${created} tags`);
-  }, [docs, tagsData, setTagsData, lang]);
+  }, [docs, tagsData, setTagsData, lang, confirm]);
 
-  const removeAllTags = React.useCallback(() => {
+  const removeAllTags = React.useCallback(async () => {
     const msg = lang === 'zh'
       ? '確定要刪除全部標籤與所有檔案指派？'
       : 'Remove all tags and all file assignments?';
-    if (!window.confirm(msg)) return;
+    const ok = await confirm(msg, { danger: true });
+    if (!ok) return;
 
     const nd = { ...tagsData, customTags: [], assignments: {} };
     setTagsData(nd);
     saveTagsData(nd);
     setTagApplyMessage(lang === 'zh' ? '已移除全部標籤' : 'Removed all tags');
-  }, [tagsData, setTagsData, lang]);
+  }, [tagsData, setTagsData, lang, confirm]);
 
   const tree = React.useMemo(() => {
     const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : null;
@@ -372,7 +415,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
             </div>
             {tagMode === 'auto' && (
               <>
-                <button className="tag-manager-apply" onClick={applyFolderTags}>{T('docs_apply_folder_tags')}</button>
+                <button className="tag-manager-apply primary" onClick={applyFolderTags}>{T('docs_apply_folder_tags')}</button>
                 <button className="tag-manager-apply danger" onClick={removeAllTags}>{T('docs_remove_all_tags')}</button>
                 {tagApplyMessage && <div className="tag-manager-message">{tagApplyMessage}</div>}
               </>
@@ -442,16 +485,16 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
           ) : viewMode === 'explorer' ? (
             <div className="explorer-root">
               {Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b)).map(([n, node]) => (
-                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} allowTagEdit={tagMode === 'manual'} />
+                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} allowTagEdit={true} />
               ))}
               {tree.files.map(doc => (
-                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={tagMode === 'manual'} />
+                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} />
               ))}
             </div>
           ) : (
             <div className="doc-grid">
               {filtered.map(doc => (
-                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={tagMode === 'manual'} />
+                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} />
               ))}
             </div>
           )}

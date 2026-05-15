@@ -83,8 +83,17 @@ var DICT = {
     docs_manual_tags: "Individual",
     docs_apply_folder_tags: "Apply folder tags",
     docs_remove_all_tags: "Remove all tags",
-    docs_add_tag:    "Add tag",
+        docs_add_tag:    "Add Tag",
+    docs_edit_tag:   "Edit Tag",
     docs_remove_tag: "Remove tag",
+        docs_no_tags:    "No tags yet",
+    docs_tags_assigned: "Assigned",
+    docs_tags_available: "Available",
+
+    // confirm dialog
+    confirm_cancel:  "Cancel",
+    confirm_ok:      "Confirm",
+    confirm_danger:  "Delete",
 
     // bookmarks page
     bookmarks_title:    "Bookmarks",
@@ -202,8 +211,17 @@ var DICT = {
     docs_manual_tags: "個別設定",
     docs_apply_folder_tags: "套用子目錄標籤",
     docs_remove_all_tags: "移除全部標籤",
-    docs_add_tag:    "新增標籤",
+        docs_add_tag:    "新增標籤",
+    docs_edit_tag:   "編輯標籤",
     docs_remove_tag: "移除標籤",
+        docs_no_tags:    "尚無標籤",
+    docs_tags_assigned: "已套用",
+    docs_tags_available: "可選用",
+
+    // confirm dialog
+    confirm_cancel:  "取消",
+    confirm_ok:      "確認",
+    confirm_danger:  "刪除",
 
     bookmarks_title:    "我的收藏",
     bookmarks_nav:      "收藏",

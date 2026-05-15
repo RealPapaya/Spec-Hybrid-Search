@@ -1188,51 +1188,112 @@ body {
   border-radius: 6px;
   background: var(--bg);
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   flex-wrap: wrap;
   cursor: default;
 }
 .doc-card .file-action-panel {
   margin: 0 0 0 22px;
 }
-.file-action-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  min-width: 180px;
-  flex: 1;
-}
-.tag-action-chip {
-  min-width: 0;
-  height: 24px;
-  padding: 0 7px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--bg-elev);
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: 11px;
+
+/* File action panel — hover-flyout button wrapper */
+.fap-btn-wrap {
+  position: relative;
   display: inline-flex;
+}
+
+/* Shared flyout styles */
+.fap-flyout {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 200;
+  min-width: 200px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.14);
+  padding: 6px 0;
+  font-size: 12.5px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+/* Show edit flyout on hover */
+.fap-btn-wrap:hover .fap-edit-flyout,
+.fap-btn-wrap:focus-within .fap-edit-flyout {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+/* Show add flyout when .fap-add-visible is set or on hover */
+.fap-flyout.fap-add-visible,
+.fap-btn-wrap:hover .fap-add-flyout,
+.fap-btn-wrap:focus-within .fap-add-flyout {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.fap-flyout-sect {
+  padding: 4px 10px 2px;
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-faint);
+}
+.fap-flyout-empty {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--fg-faint);
+}
+.fap-tag-item {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  cursor: pointer;
-}
-.tag-action-chip:hover { border-color: var(--border-strong); color: var(--fg); }
-.tag-action-chip.on {
+  gap: 7px;
+  width: 100%;
+  padding: 5px 10px;
+  background: none;
+  border: none;
   color: var(--fg);
-  background: var(--bg-soft);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.08s;
 }
-.tag-action-chip span {
-  width: 7px;
-  height: 7px;
+.fap-tag-item:hover { background: var(--bg-hover); }
+.fap-tag-item.on { color: var(--fg); }
+.fap-tag-item.on svg { color: var(--fg-faint); }
+.fap-dot {
+  width: 8px; height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  display: inline-block;
 }
-.tag-action-chip svg {
-  width: 11px;
-  height: 11px;
-  color: var(--fg-faint);
+.fap-tag-name { flex: 1; }
+.fap-tag-item svg { width: 11px; height: 11px; color: var(--fg-faint); flex-shrink: 0; }
+
+/* Add-tag flyout input row */
+.fap-add-flyout {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+}
+.fap-add-flyout input {
+  flex: 1; height: 26px; padding: 0 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; font: inherit; font-size: 12px; color: var(--fg); outline: none;
+  min-width: 0;
+}
+.fap-add-flyout input:focus { border-color: var(--accent); }
+.fap-add-flyout button {
+  height: 26px; padding: 0 10px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 4px; font: inherit; font-size: 11.5px; cursor: pointer; white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Tag pills */
@@ -1351,23 +1412,44 @@ body {
 .tag-manager-apply {
   width: 100%;
   height: 28px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: white;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--fg-muted);
   border-radius: 5px;
   font: inherit;
   font-size: 11.5px;
   cursor: pointer;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+.tag-manager-apply:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+.tag-manager-apply.primary {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+}
+.tag-manager-apply.primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 .tag-manager-apply.danger {
-  background: var(--bg);
-  border-color: var(--border-strong);
+  background: var(--bg-elev);
+  border-color: var(--border);
   color: var(--fg-muted);
 }
 .tag-manager-apply.danger:hover {
-  border-color: var(--score-low);
+  border-color: color-mix(in srgb, var(--score-low) 60%, var(--border));
   color: var(--score-low);
+  background: color-mix(in srgb, var(--score-low) 8%, var(--bg-elev));
 }
 .tag-manager-message {
   margin-top: 6px;
@@ -1449,3 +1531,81 @@ body {
   word-break: break-word;
 }
 #tip.visible { opacity: 1; }
+
+/* ── Themed Confirm Dialog ── */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9980;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.12s ease;
+}
+.confirm-dialog {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  padding: 20px 22px 16px;
+  min-width: 300px;
+  max-width: 420px;
+  width: 90%;
+  animation: slide-up 0.14s ease;
+}
+.confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+.confirm-message {
+  font-size: 13px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.confirm-btn {
+  height: 30px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+.confirm-btn-cancel {
+  background: var(--bg);
+  color: var(--fg-muted);
+}
+.confirm-btn-cancel:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+.confirm-btn-ok {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.confirm-btn-ok:hover {
+  filter: brightness(1.1);
+}
+.confirm-btn-danger {
+  background: color-mix(in srgb, var(--score-low) 12%, var(--bg-elev));
+  border-color: color-mix(in srgb, var(--score-low) 50%, var(--border));
+  color: var(--score-low);
+}
+.confirm-btn-danger:hover {
+  background: var(--score-low);
+  border-color: var(--score-low);
+  color: white;
+}
+@keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-up { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
