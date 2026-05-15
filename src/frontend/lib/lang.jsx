@@ -77,6 +77,7 @@ var DICT = {
     docs_tag_assign: "Assign tags",
     docs_open:       "Open",
     docs_all_files:  "All files",
+    docs_refresh:    "Scan for new files",
 
     // bookmarks page
     bookmarks_title:    "Bookmarks",
@@ -188,6 +189,7 @@ var DICT = {
     docs_tag_assign: "指派標籤",
     docs_open:       "開啟",
     docs_all_files:  "全部檔案",
+    docs_refresh:    "掃描新檔案",
 
     bookmarks_title:    "我的收藏",
     bookmarks_nav:      "收藏",

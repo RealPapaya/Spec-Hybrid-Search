@@ -102,13 +102,32 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const lang = React.useContext(LangCtx);
   const [docs, setDocs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [viewMode, setViewMode] = React.useState('list');
   const [filterText, setFilterText] = React.useState('');
   const [activeTagFilter, setActiveTagFilter] = React.useState([]);
 
-  React.useEffect(() => {
-    fetch('/api/documents').then(r => r.json()).then(d => { setDocs(d.documents || []); setLoading(false); }).catch(() => setLoading(false));
+  const fetchDocs = React.useCallback(() => {
+    return fetch('/api/documents').then(r => r.json()).then(d => { setDocs(d.documents || []); }).catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    fetchDocs().finally(() => setLoading(false));
+  }, [fetchDocs]);
+
+  // Trigger a background re-index, then refresh the document list.
+  const handleRefresh = React.useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await fetch('/api/index', { method: 'POST' });
+      // Poll until the index job settles (up to ~10 s), then reload the list.
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await fetchDocs();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing, fetchDocs]);
 
   const filtered = React.useMemo(() => {
     let ds = docs;
@@ -163,6 +182,19 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
           <input value={filterText} onChange={e => setFilterText(e.target.value)} placeholder={T('docs_search')} style={{ fontSize: 12 }} />
         </div>
         <span className="spacer"></span>
+        <button
+          className="iconbtn"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          data-tip={T('docs_refresh')}
+          style={refreshing ? { opacity: 0.6 } : null}
+        >
+          <span style={refreshing ? { display: 'inline-flex', animation: 'spin 0.8s linear infinite' } : { display: 'inline-flex' }}>
+            <Icon.refresh />
+          </span>
+          <span style={{ fontSize: 11 }}>{T('docs_refresh')}</span>
+        </button>
+        <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }}></div>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-faint)' }}>
           {filtered.length}{docs.length !== filtered.length ? ' / ' + docs.length : ''} {lang === 'zh' ? '份文件' : 'files'}
         </span>

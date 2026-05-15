@@ -35,4 +35,5 @@ var Icon = {
   tree:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 2.5v11M3 8h4M3 13h7M7 8v5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="7" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="2.5" r="1.5" fill="currentColor" stroke="none"/></svg>,
   tag:      () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 2h5.5l6.5 6.5-5.5 5.5L2 7.5V2z" strokeLinejoin="round"/><circle cx="5" cy="5" r="1" fill="currentColor" stroke="none"/></svg>,
   folder:   () => <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.5A1 1 0 0 1 2.5 2.5h3.586a1 1 0 0 1 .707.293l.914.914H13.5a1 1 0 0 1 1 1V12.5a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V3.5z" opacity=".3"/><path d="M1.5 5.5h13v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7z"/></svg>,
+  refresh:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13.5 6A6 6 0 1 0 12 11.2"/><path d="M13.5 2.5v3.5H10"/></svg>,
 };
