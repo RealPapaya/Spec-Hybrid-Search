@@ -1,5 +1,5 @@
 // Bookmarks: { [doc_id:page]: { doc_id, filename, filepath, page, snippet,
-// section, score, savedAt } } — persisted in localStorage.
+// section, score, savedAt } } — mirrored to the backend .local settings file.
 // `var` for cross-file BOOKMARKS_KEY.
 
 var BOOKMARKS_KEY = 'docsense_bookmarks_v1';
@@ -18,6 +18,7 @@ function loadBookmarks() {
 
 function saveBookmarks(obj) {
   try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(obj)); } catch(e) {}
+  saveLocalSettingsPatch({ bookmarks: obj });
 }
 
 // Build the metadata payload we want to keep when bookmarking a result.

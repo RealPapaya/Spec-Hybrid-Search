@@ -82,6 +82,9 @@ var DICT = {
     docs_auto_tags:  "By subfolder",
     docs_manual_tags: "Individual",
     docs_apply_folder_tags: "Apply folder tags",
+    docs_remove_all_tags: "Remove all tags",
+    docs_add_tag:    "Add tag",
+    docs_remove_tag: "Remove tag",
 
     // bookmarks page
     bookmarks_title:    "Bookmarks",
@@ -198,6 +201,9 @@ var DICT = {
     docs_auto_tags:  "依子目錄",
     docs_manual_tags: "個別設定",
     docs_apply_folder_tags: "套用子目錄標籤",
+    docs_remove_all_tags: "移除全部標籤",
+    docs_add_tag:    "新增標籤",
+    docs_remove_tag: "移除標籤",
 
     bookmarks_title:    "我的收藏",
     bookmarks_nav:      "收藏",

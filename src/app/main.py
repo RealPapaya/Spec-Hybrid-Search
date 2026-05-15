@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import FRONTEND_DIR, WATCHED_DOCS_DIR
 from app.routes import search as search_router
 from app.routes import index  as index_router
+from app.routes import settings as settings_router
 from app.services.fts import init_db
 from app.services.qdrant_store import ensure_collection
 from indexer.pipeline import index_all
@@ -123,6 +124,7 @@ def create_app() -> FastAPI:
     # API routes
     app.include_router(search_router.router, prefix="/api")
     app.include_router(index_router.router,  prefix="/api")
+    app.include_router(settings_router.router, prefix="/api")
 
     # Serve the single-page frontend at /
     FRONTEND_DIR.mkdir(parents=True, exist_ok=True)

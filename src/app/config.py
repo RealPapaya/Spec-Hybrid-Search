@@ -31,6 +31,7 @@ DB_DIR           = DATA_DIR / "db"
 LOG_DIR          = DATA_DIR / "logs"
 SNAPSHOTS_DIR    = DATA_DIR / "snapshots"
 WATCHED_DOCS_DIR = BASE_DIR / "watched_docs"
+USER_SETTINGS_PATH = DATA_DIR / "user-settings.local"
 
 # ── Qdrant ────────────────────────────────────────────────────────────────────
 QDRANT_HOST       = "localhost"

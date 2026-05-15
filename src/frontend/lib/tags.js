@@ -1,4 +1,5 @@
-// Tags storage: custom user tags + per-document assignments, in localStorage.
+// Tags storage: custom user tags + per-document assignments, mirrored to the
+// backend .local settings file.
 // `var` for cross-file globals; `getFolderName` derives a folder label from
 // a filepath (used for the "Folders" pseudo-tag group).
 
@@ -14,6 +15,7 @@ function loadTagsData() {
 }
 function saveTagsData(data) {
   try { localStorage.setItem(TAGS_KEY, JSON.stringify(data)); } catch(e) {}
+  saveLocalSettingsPatch({ tags: data });
 }
 function getFolderName(filepath) {
   if (!filepath) return '';

@@ -79,6 +79,42 @@ function App() {
   // Bookmarks (lifted up so Topbar count + Bookmarks page + PreviewPanel share one source)
   const [bookmarks, setBookmarks] = React.useState(loadBookmarks);
   const bookmarkCount = Object.keys(bookmarks).length;
+  const [settingsLoaded, setSettingsLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    loadLocalSettingsFile()
+      .then(settings => {
+        if (!alive) return;
+        const hasLocalFile = !!(settings && settings._exists);
+        const prefs = settings && settings.prefs && typeof settings.prefs === 'object' ? settings.prefs : {};
+        if (Object.keys(prefs).length) {
+          if (prefs.theme) setTheme(prefs.theme);
+          if (prefs.lang) setLang(prefs.lang);
+          if (prefs.cardMode) setCardMode(prefs.cardMode);
+          const nextTweaks = {};
+          ['layout', 'density', 'accent', 'typeset', 'cardMode', 'highlight'].forEach(key => {
+            if (prefs[key]) nextTweaks[key] = prefs[key];
+          });
+          setTweakState(prev => ({ ...prev, ...nextTweaks }));
+        }
+        if (settings && settings.tags && Array.isArray(settings.tags.customTags)) {
+          const hasTags = settings.tags.customTags.length || Object.keys(settings.tags.assignments || {}).length;
+          if (hasLocalFile || hasTags) {
+            setTagsData(settings.tags);
+            try { localStorage.setItem(TAGS_KEY, JSON.stringify(settings.tags)); } catch(e) {}
+          }
+        }
+        if (settings && settings.bookmarks && typeof settings.bookmarks === 'object') {
+          if (hasLocalFile || Object.keys(settings.bookmarks).length) {
+            setBookmarks(settings.bookmarks);
+            try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(settings.bookmarks)); } catch(e) {}
+          }
+        }
+      })
+      .finally(() => { if (alive) setSettingsLoaded(true); });
+    return () => { alive = false; };
+  }, []);
 
   // Poll backend status so the topbar dot reflects reality.
   React.useEffect(() => {
@@ -112,10 +148,20 @@ function App() {
     setTweakState(prev => ({ ...prev, ...edits }));
   }, []);
 
-  // Persist preferences to localStorage
+  // Persist preferences to localStorage and, after startup load, to the .local file.
   React.useEffect(() => {
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ theme, lang, ...tweaks })); } catch(e) {}
-  }, [theme, lang, tweaks]);
+    const data = { theme, lang, ...tweaks };
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(data)); } catch(e) {}
+    if (settingsLoaded) saveLocalSettingsPatch({ prefs: data });
+  }, [theme, lang, tweaks, settingsLoaded]);
+
+  React.useEffect(() => {
+    if (settingsLoaded) saveLocalSettingsPatch({ tags: tagsData });
+  }, [tagsData, settingsLoaded]);
+
+  React.useEffect(() => {
+    if (settingsLoaded) saveLocalSettingsPatch({ bookmarks });
+  }, [bookmarks, settingsLoaded]);
 
   // Apply all preferences to the document root
   React.useEffect(() => {
