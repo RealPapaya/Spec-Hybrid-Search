@@ -401,12 +401,43 @@ function App() {
   const [loading,   setLoading]   = useState(false);
   const [status,    setStatus]    = useState({ ok: false, total_documents: 0, total_chunks: 0, collection_points: 0 });
   const [filters,   setFilters]   = useState({ types: [], scoreMin: "0.00", scoreMax: "1.00" });
+  const [railW,     setRailW]     = useState(240);
+  const resizerRef  = useRef(null);
+  const dragging    = useRef(false);
 
   // ── Apply theme ────────────────────────────────────────────────────────────
   useEffect(() => {
     document.documentElement.dataset.theme   = theme;
     document.documentElement.dataset.card    = cardMode;
   }, [theme, cardMode]);
+
+  // ── Rail width CSS var ─────────────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.style.setProperty("--rail-w", `${railW}px`);
+  }, [railW]);
+
+  // ── Resizer drag ───────────────────────────────────────────────────────────
+  const onResizerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    dragging.current = true;
+    resizerRef.current?.classList.add("dragging");
+    const startX = e.clientX;
+    const startW = railW;
+
+    const onMove = (ev) => {
+      if (!dragging.current) return;
+      const next = Math.max(140, Math.min(480, startW + ev.clientX - startX));
+      setRailW(next);
+    };
+    const onUp = () => {
+      dragging.current = false;
+      resizerRef.current?.classList.remove("dragging");
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [railW]);
 
   // ── Poll status ────────────────────────────────────────────────────────────
   const fetchStatus = useCallback(async () => {
@@ -488,6 +519,9 @@ function App() {
       <SearchRow query={query} setQuery={setQuery} mode={mode} setMode={setMode} onSearch={onSearch} loading={loading} />
       <div className="main">
         <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} onReindex={onReindex} />
+        <div className="resizer">
+          <div ref={resizerRef} className="resizer-pill" onMouseDown={onResizerMouseDown} title="Drag to resize" />
+        </div>
         <ResultsPanel
           results={filtered}
           selectedId={selectedId}

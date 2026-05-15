@@ -213,6 +213,19 @@ body {
 }
 .iconbtn:hover { background: var(--bg-hover); color: var(--fg); border-color: var(--border-strong); }
 .iconbtn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.iconbtn-settings {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  border-radius: 6px;
+}
+.iconbtn-settings svg {
+  width: 15px;
+  height: 15px;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.iconbtn-settings:hover { background: var(--bg-hover); border-color: var(--border-strong); }
 
 /* Search bar row */
 .searchrow {
@@ -327,15 +340,50 @@ body {
 }
 .searchbtn:hover { filter: brightness(1.05); }
 
-/* Main grid: filters | results | preview */
+/* Main grid: filters | resizer | results | resizer | preview */
 .main {
   display: grid;
-  grid-template-columns: 240px minmax(420px, 1fr) minmax(440px, 1.05fr);
+  grid-template-columns: var(--rail-w, 240px) 0 minmax(360px, 1fr) 0 var(--preview-w, 460px);
   min-height: 0;
   overflow: hidden;
 }
 [data-layout="topfilters"] .main {
-  grid-template-columns: minmax(420px, 1fr) minmax(440px, 1.05fr);
+  grid-template-columns: minmax(360px, 1fr) 0 var(--preview-w, 460px);
+}
+
+/* Resizer pill */
+.resizer {
+  position: relative;
+  width: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+}
+.resizer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  width: 16px;
+}
+.resizer-pill {
+  position: absolute;
+  left: -4px;
+  width: 8px;
+  height: 28px;
+  border-radius: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.resizer:hover .resizer-pill,
+.resizer-pill.dragging {
+  background: var(--accent);
+  transform: scaleX(1.25);
 }
 [data-layout="topfilters"] .filters-rail { display: none; }
 [data-layout="topfilters"] .topfilters { display: flex; }
@@ -387,7 +435,7 @@ body {
 
 /* Filters rail (sidebar) */
 .filters-rail {
-  border-right: 1px solid var(--border);
+  border-right: none;
   background: var(--bg-elev);
   overflow-y: auto;
   padding: 4px 0;
@@ -476,7 +524,7 @@ body {
 .results {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-right: none;
   background: var(--bg);
   overflow: hidden;
   min-width: 0;
@@ -745,9 +793,13 @@ body {
 .preview-meta {
   padding: 10px 16px 12px;
   border-bottom: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 12px 18px;
+}
+.metaitem.align-right {
+  text-align: right;
 }
 .metaitem {
   display: flex;
@@ -981,17 +1033,98 @@ body {
 
 /* Responsive squeezing */
 @media (max-width: 1280px) {
-  .preview-meta { grid-template-columns: repeat(2, 1fr); }
+  .preview-meta { flex-wrap: wrap; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Custom tooltip ── */
+#tip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  max-width: 280px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--fg);
+  color: var(--bg-elev);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  line-height: 1.45;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  opacity: 0;
+  transition: opacity .12s ease;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+#tip.visible { opacity: 1; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+<div id="tip"></div>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>
+// Custom tooltip — delegates from [data-tip] attributes
+(function () {
+  const el = document.getElementById('tip');
+  let hideTimer;
+
+  function show(text, x, y) {
+    clearTimeout(hideTimer);
+    el.textContent = text;
+    // position: prefer below, flip above if clipped
+    const GAP = 8;
+    const rect = el.getBoundingClientRect();
+    let top = y + GAP;
+    if (top + rect.height > window.innerHeight - 8) top = y - rect.height - GAP;
+    let left = x + GAP;
+    if (left + rect.width > window.innerWidth - 8) left = x - rect.width - GAP;
+    el.style.left = left + 'px';
+    el.style.top  = top  + 'px';
+    el.classList.add('visible');
+  }
+
+  function hide() {
+    hideTimer = setTimeout(() => el.classList.remove('visible'), 80);
+  }
+
+  document.addEventListener('mouseover', function (e) {
+    const target = e.target.closest('[data-tip]');
+    if (!target) return;
+    show(target.dataset.tip, e.clientX, e.clientY);
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!el.classList.contains('visible')) return;
+    const target = e.target.closest('[data-tip]');
+    if (!target) return;
+    const GAP = 8;
+    let top  = e.clientY + GAP;
+    let left = e.clientX + GAP;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (top  + h > window.innerHeight - 8) top  = e.clientY - h - GAP;
+    if (left + w > window.innerWidth  - 8) left = e.clientX - w - GAP;
+    el.style.left = left + 'px';
+    el.style.top  = top  + 'px';
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    const target = e.target.closest('[data-tip]');
+    if (!target) return;
+    hide();
+  });
+
+  document.addEventListener('click', hide);
+  document.addEventListener('scroll', hide, true);
+  document.addEventListener('keydown', hide);
+})();
+</script>
 
 <script type="text/babel">
 
@@ -1533,7 +1666,7 @@ function TweakColor({ label, value, options, onChange }) {
           return (
             <button key={i} type="button" className="twk-chip" role="radio"
                     aria-checked={on} data-on={on ? '1' : '0'}
-                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    aria-label={colors.join(', ')} data-tip={colors.join(' · ')}
                     style={{ background: hero }}
                     onClick={() => onChange(o)}>
               {sup.length > 0 && (
@@ -1562,14 +1695,14 @@ function TweakButton({ label, onClick, secondary = false }) {
 // i18n dictionary + simple context for SpecIndex
 const DICT = {
   en: {
-    brand_sub: "hybrid search · local docs",
+    brand_sub: "",
     index_status: "ready",
     toggle_theme: "Toggle theme",
     lang_label: "EN",
     lang_other: "繁",
 
     // search row
-    search_placeholder: 'Search your documents...  e.g.  "project timeline"  ·  budget 2024  ·  meeting notes',
+    search_placeholder: 'Search your documents...',
     mode_keyword: "Keyword",
     mode_hybrid: "Hybrid",
     mode_semantic: "Semantic",
@@ -1659,13 +1792,13 @@ const DICT = {
     tw_slate: "Slate",
   },
   zh: {
-    brand_sub: "混合檢索 · 本地文件",
+    brand_sub: "",
     index_status: "就緒",
     toggle_theme: "切換主題",
     lang_label: "繁",
     lang_other: "EN",
 
-    search_placeholder: '搜尋你的文件... 例如：「專案時程」·「2024 預算」·「會議記錄」',
+    search_placeholder: '搜尋你的文件...',
     mode_keyword: "關鍵字",
     mode_hybrid: "混合",
     mode_semantic: "語意",
@@ -2087,7 +2220,7 @@ const Icon = {
   check:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   sun:      () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" strokeLinecap="round"/></svg>,
   moon:     () => <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10.5a5.5 5.5 0 11-7-7 4.5 4.5 0 007 7z" /></svg>,
-  settings: () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.05 4.05l.71.71M11.24 11.24l.71.71M4.05 11.95l.71-.71M11.24 4.76l.71-.71" strokeLinecap="round"/></svg>,
+  settings: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.5c-.55 0-1.1.04-1.63.12L9.5 4.8A7 7 0 0 0 7.2 6.1L4.9 5.4 3.4 7.9l1.7 1.7a7 7 0 0 0 0 4.8L3.4 16.1l1.5 2.5 2.3-.7a7 7 0 0 0 2.3 1.3l.87 2.18C10.9 21.46 11.44 21.5 12 21.5s1.1-.04 1.63-.12l.87-2.18a7 7 0 0 0 2.3-1.3l2.3.7 1.5-2.5-1.7-1.7a7 7 0 0 0 0-4.8l1.7-1.7-1.5-2.5-2.3.7A7 7 0 0 0 14.5 4.8l-.87-2.18A9.3 9.3 0 0 0 12 2.5z"/><circle cx="12" cy="12" r="3"/></svg>,
   copy:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3a1 1 0 00-1-1H3a1 1 0 00-1 1v7a1 1 0 001 1h2"/></svg>,
   external: () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 3H3v10h10V9M9 3h4v4M13 3l-6 6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   arrow:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -2128,7 +2261,7 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
       <button
         className="iconbtn"
         onClick={() => setView(inBookmarks ? 'search' : 'bookmarks')}
-        title={inBookmarks ? T('bookmarks_back') : T('bookmarks_nav')}
+        data-tip={inBookmarks ? T('bookmarks_back') : T('bookmarks_nav')}
         style={inBookmarks ? { color: 'var(--accent)' } : null}
       >
         {inBookmarks ? <Icon.bookmarkFill /> : <Icon.bookmark />}
@@ -2139,17 +2272,16 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
       <button
         className="iconbtn"
         onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-        title="切換語言 / Switch language"
+        data-tip="切換語言 / Switch language"
         style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, minWidth: 38, letterSpacing: 0 }}
       >
         {lang === 'en' ? '繁中' : 'EN'}
       </button>
-      <button className="iconbtn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={T('toggle_theme')}>
+      <button className="iconbtn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} data-tip={T('toggle_theme')}>
         {theme === 'dark' ? <Icon.sun /> : <Icon.moon />}
       </button>
-      <button className="iconbtn" onClick={onOpenPrefs} title={lang === 'zh' ? '偏好設定' : 'Preferences'}>
+      <button className="iconbtn iconbtn-settings" onClick={onOpenPrefs} data-tip={lang === 'zh' ? '偏好設定' : 'Settings'}>
         <Icon.settings />
-        <span style={{ fontSize: '11px' }}>{lang === 'zh' ? '偏好' : 'Prefs'}</span>
       </button>
     </div>
   );
@@ -2158,6 +2290,7 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
 // ─── SearchRow ────────────────────────────────────────────────────────────────
 function SearchRow({ query, setQuery, mode, setMode, onSearch }) {
   const T = useT();
+  const lang = React.useContext(LangCtx);
   return (
     <div className="searchrow">
       <div className="searchbox">
@@ -2175,10 +2308,16 @@ function SearchRow({ query, setQuery, mode, setMode, onSearch }) {
           { id: 'hybrid',   label: T('mode_hybrid'),   sub: 'BM25 ⊕ vec' },
           { id: 'semantic', label: T('mode_semantic'),  sub: 'vec'        },
         ].map(m => (
-          <button key={m.id} className={mode === m.id ? 'active' : ''} onClick={() => setMode(m.id)} title={m.sub}>
-            <span className="mdot"></span>
-            {m.label}
-          </button>
+          m.id === 'semantic'
+            ? <button key={m.id} className="" disabled data-tip={lang === 'zh' ? '實作中' : 'Coming soon'} style={{ opacity: 0.4, cursor: 'not-allowed', position: 'relative' }}>
+                <span className="mdot"></span>
+                {m.label}
+                <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.8 }}>{lang === 'zh' ? '(實作中)' : '(soon)'}</span>
+              </button>
+            : <button key={m.id} className={mode === m.id ? 'active' : ''} onClick={() => setMode(m.id)} data-tip={m.sub}>
+                <span className="mdot"></span>
+                {m.label}
+              </button>
         ))}
       </div>
       <button className="searchbtn" onClick={onSearch}>
@@ -2288,8 +2427,8 @@ function ResultRow({ result, index, selected, onSelect }) {
         </div>
         <div className="excerpt">{highlightText(result.excerpt, result.highlight)}</div>
         <div className="result-row3">
-          <span className="scoreitem" title={T('score_bm25_tip')}><span className="dot bm"></span>BM25 {(result.bm25 || 0).toFixed(2)}</span>
-          <span className="scoreitem" title={T('score_cos_tip')}><span className="dot sem"></span>cos {(result.semantic || 0).toFixed(2)}</span>
+          <span className="scoreitem" data-tip={T('score_bm25_tip')}><span className="dot bm"></span>BM25 {(result.bm25 || 0).toFixed(2)}</span>
+          <span className="scoreitem" data-tip={T('score_cos_tip')}><span className="dot sem"></span>cos {(result.semantic || 0).toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -2311,8 +2450,8 @@ function ResultsPanel({ results, selectedId, onSelect, sortKey, setSortKey, card
           <option value="date">{T('sort_date')}</option>
         </select>
         <div className="layout-toggle">
-          <button className={cardMode === 'detailed' ? 'on' : ''} onClick={() => setCardMode('detailed')} title={T('layout_detailed')}><Icon.rows /></button>
-          <button className={cardMode === 'compact'  ? 'on' : ''} onClick={() => setCardMode('compact')}  title={T('layout_compact')} ><Icon.list /></button>
+          <button className={cardMode === 'detailed' ? 'on' : ''} onClick={() => setCardMode('detailed')} data-tip={T('layout_detailed')}><Icon.rows /></button>
+          <button className={cardMode === 'compact'  ? 'on' : ''} onClick={() => setCardMode('compact')}  data-tip={T('layout_compact')} ><Icon.list /></button>
         </div>
       </div>
       <div className="result-list">
@@ -2445,11 +2584,7 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
   return (
     <section className="preview">
       <div className="preview-head">
-        <div className="crumbs">
-          <span className="crumb">{result.spec}</span>
-          <span className="arr"><Icon.arrow /></span>
-          <span className="crumb last">§ {result.section}</span>
-        </div>
+        <div className="crumbs"></div>
         {flash && (
           <span style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
             {flash}
@@ -2458,36 +2593,34 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
         <button
           className="iconbtn"
           onClick={toggleBookmark}
-          title={isBookmarked
+          data-tip={isBookmarked
             ? (lang === 'zh' ? '已加入收藏' : 'Bookmarked')
             : (lang === 'zh' ? '加入收藏'   : 'Bookmark')}
           style={isBookmarked ? { color: 'var(--accent)' } : null}
         >
           {isBookmarked ? <Icon.bookmarkFill /> : <Icon.bookmark />}
         </button>
-        <button className="iconbtn" onClick={openFile} title={result.filepath}>
+        <button className="iconbtn" onClick={openFile} data-tip={result.filepath}>
           <Icon.external /> {T('open')}
         </button>
       </div>
 
       <div className="preview-meta">
         <div className="metaitem"><span className="l">{T('meta_doc')}</span><span className="v mono">{result.specShort}</span></div>
-        <div className="metaitem"><span className="l">{T('meta_version')}</span><span className="v mono">{result.version}</span></div>
-        <div className="metaitem"><span className="l">{T('meta_page')}</span><span className="v mono">{result.page}</span></div>
-        <div className="metaitem"><span className="l">{T('meta_published')}</span><span className="v mono">{result.date}</span></div>
+        <div className="metaitem align-right"><span className="l">{T('meta_page')}</span><span className="v mono">{result.page}</span></div>
       </div>
 
       <div className="preview-scoring">
         <div className="barwrap">
-          <div className="lab"><span className="name" title={T('score_fused_tip')}><span className="dot fused"></span>{T('score_fused')}</span><span className="val">{fused.toFixed(4)}</span></div>
+          <div className="lab"><span className="name" data-tip={T('score_fused_tip')}><span className="dot fused"></span>{T('score_fused')}</span><span className="val">{fused.toFixed(4)}</span></div>
           <div className="bar"><div style={{ width: fused * 100 + '%', background: 'var(--accent)' }}></div></div>
         </div>
         <div className="barwrap">
-          <div className="lab"><span className="name" title={T('score_bm25_tip')}><span className="dot bm"></span>BM25</span><span className="val">{bm.toFixed(4)}</span></div>
+          <div className="lab"><span className="name" data-tip={T('score_bm25_tip')}><span className="dot bm"></span>BM25</span><span className="val">{bm.toFixed(4)}</span></div>
           <div className="bar"><div style={{ width: bm * 100 + '%', background: '#f59e0b' }}></div></div>
         </div>
         <div className="barwrap">
-          <div className="lab"><span className="name" title={T('score_cos_tip')}><span className="dot sem"></span>cos</span><span className="val">{sem.toFixed(4)}</span></div>
+          <div className="lab"><span className="name" data-tip={T('score_cos_tip')}><span className="dot sem"></span>cos</span><span className="val">{sem.toFixed(4)}</span></div>
           <div className="bar"><div style={{ width: sem * 100 + '%', background: '#8b5cf6' }}></div></div>
         </div>
       </div>
@@ -2501,7 +2634,6 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
 
       <div className="preview-body preview-text">
         {tab === 'context' && <>
-          <h3 className="section-h">{result.spec}<span className="pg">{T('page_short')} {result.page}</span></h3>
           <div className="ctx-block">
             <div className="ctx-label">{T('ctx_preceding')} · {T('page_short')} {result.page - 1}</div>
             {highlightText(result.context.before, result.highlight)}
@@ -2596,7 +2728,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
         <button
           className="iconbtn"
           onClick={onBack}
-          title={T('bookmarks_back')}
+          data-tip={T('bookmarks_back')}
           style={{ marginRight: 8 }}
         >
           <Icon.back /> {T('bookmarks_back')}
@@ -2606,7 +2738,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
         </span>
         <span className="spacer"></span>
         {items.length > 0 && (
-          <button className="iconbtn" onClick={clearAll} title={T('bookmarks_clear_all')}>
+          <button className="iconbtn" onClick={clearAll} data-tip={T('bookmarks_clear_all')}>
             <Icon.trash /> {T('bookmarks_clear_all')}
           </button>
         )}
@@ -2653,7 +2785,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
                     <button
                       className="iconbtn"
                       onClick={() => openItem(b)}
-                      title={b.filepath}
+                      data-tip={b.filepath}
                     >
                       <Icon.external /> {T('bookmarks_open')}
                     </button>
@@ -2667,7 +2799,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
                     <button
                       className="iconbtn"
                       onClick={() => remove(b.key)}
-                      title={T('bookmarks_remove')}
+                      data-tip={T('bookmarks_remove')}
                     >
                       <Icon.trash />
                     </button>
@@ -2721,6 +2853,54 @@ function App() {
 
   // View routing: 'search' (default) or 'bookmarks'
   const [view, setView] = React.useState('search');
+
+  // Rail resize (left: filters | results)
+  const [railW, setRailW] = React.useState(240);
+  const resizerPillRef = React.useRef(null);
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--rail-w', railW + 'px');
+  }, [railW]);
+  const onResizerMouseDown = React.useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = railW;
+    resizerPillRef.current?.classList.add('dragging');
+    const onMove = (ev) => {
+      const next = Math.max(140, Math.min(480, startW + ev.clientX - startX));
+      setRailW(next);
+    };
+    const onUp = () => {
+      resizerPillRef.current?.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [railW]);
+
+  // Preview resize (right: results | preview)
+  const [previewW, setPreviewW] = React.useState(460);
+  const previewPillRef = React.useRef(null);
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--preview-w', previewW + 'px');
+  }, [previewW]);
+  const onPreviewResizerMouseDown = React.useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = previewW;
+    previewPillRef.current?.classList.add('dragging');
+    const onMove = (ev) => {
+      const next = Math.max(300, Math.min(800, startW - (ev.clientX - startX)));
+      setPreviewW(next);
+    };
+    const onUp = () => {
+      previewPillRef.current?.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [previewW]);
 
   // Bookmarks (lifted up so Topbar count + Bookmarks page + PreviewPanel share one source)
   const [bookmarks, setBookmarks] = React.useState(loadBookmarks);
@@ -2848,7 +3028,7 @@ function App() {
               onBack={() => setView('search')}
             />
           ) : loading ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', fontSize: 15 }}>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', fontSize: 15 }}>
               <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               {lang === 'zh' ? '搜尋中...' : 'Searching...'}
             </div>
@@ -2871,6 +3051,9 @@ function App() {
           ) : (
             <>
               <FiltersRail filters={filters} setFilters={setFilters} allResults={allResults} />
+              <div className="resizer" onMouseDown={onResizerMouseDown}>
+                <div ref={resizerPillRef} className="resizer-pill" />
+              </div>
               <ResultsPanel
                 results={filtered}
                 selectedId={selectedId}
@@ -2881,6 +3064,9 @@ function App() {
                 setCardMode={c => { setCardMode(c); setTweak('cardMode', c); }}
                 totalMs={totalMs}
               />
+              <div className="resizer" onMouseDown={onPreviewResizerMouseDown}>
+                <div ref={previewPillRef} className="resizer-pill" />
+              </div>
               <PreviewPanel result={selected} bookmarks={bookmarks} setBookmarks={setBookmarks} />
             </>
           )}
