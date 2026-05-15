@@ -15,7 +15,7 @@ function FileTypeIcon({ type }) {
   const color = colors[type] || '#7F8C8D';
   
   return (
-    <svg viewBox="0 0 16 20" width="14" height="16" style={{ flexShrink: 0, marginRight: 6 }}>
+    <svg className="file-type-icon" viewBox="0 0 16 20" aria-hidden="true">
       <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill={color} opacity="0.15" />
       <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill="none" stroke={color} strokeWidth="1.5" />
       <path d="M10 0v6h6" fill="none" stroke={color} strokeWidth="1.5" />
@@ -24,10 +24,12 @@ function FileTypeIcon({ type }) {
   );
 }
 
-function ResultRow({ result, index, selected, onSelect }) {
+function ResultRow({ result, index, selected, onSelect, tagsData = { customTags: [], assignments: {} } }) {
   const T = useT();
   const score = result.score || 0;
   const sc = scoreClass(score);
+  const assigned = (tagsData.assignments || {})[result.doc_id] || [];
+  const assignedTags = (tagsData.customTags || []).filter(tag => assigned.includes(tag.id));
   return (
     <div className={'result' + (selected ? ' selected' : '')} onClick={() => onSelect(result.id)}>
       <div className="num">#{String(index + 1).padStart(2, '0')}</div>
@@ -38,9 +40,13 @@ function ResultRow({ result, index, selected, onSelect }) {
           <span className="spacer"></span>
           <span className={'score-pill' + sc}>{score.toFixed(4)}</span>
         </div>
-        <div className="result-row2">
-          {result.type && <span className="tag">{result.type}</span>}
-        </div>
+        {assignedTags.length > 0 && (
+          <div className="result-row2 result-tags">
+            {assignedTags.map(tag => (
+              <span key={tag.id} className="tag-pill tag-pill-custom" style={{ background: tag.color }}>{tag.name}</span>
+            ))}
+          </div>
+        )}
         <div className="result-row3">
           {result.section && <span className="section">{result.section}</span>}
         </div>
@@ -54,7 +60,7 @@ function ResultRow({ result, index, selected, onSelect }) {
   );
 }
 
-function ResultsPanel({ results, selectedId, onSelect, sortKey, setSortKey, cardMode, setCardMode, totalMs }) {
+function ResultsPanel({ results, selectedId, onSelect, sortKey, setSortKey, cardMode, setCardMode, totalMs, tagsData = { customTags: [], assignments: {} } }) {
   const T = useT();
   return (
     <section className="results">
@@ -74,7 +80,7 @@ function ResultsPanel({ results, selectedId, onSelect, sortKey, setSortKey, card
       </div>
       <div className="result-list">
         {results.map((r, i) => (
-          <ResultRow key={r.id} result={r} index={i} selected={r.id === selectedId} onSelect={onSelect} />
+          <ResultRow key={r.id} result={r} index={i} selected={r.id === selectedId} onSelect={onSelect} tagsData={tagsData} />
         ))}
       </div>
     </section>

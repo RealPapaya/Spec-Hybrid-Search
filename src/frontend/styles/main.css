@@ -609,6 +609,19 @@ body {
   flex-shrink: 0;
 }
 .exf-row.on .exf-folder-ico { color: var(--accent); }
+.exf-file-ico {
+  width: 1.2em;
+  height: 1.2em;
+  flex-shrink: 0;
+}
+.exf-row-file .exf-label .label {
+  font-size: 12px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exf-row-file.on .exf-label .label { color: var(--accent); }
 
 .range-row {
   display: flex; align-items: center; gap: 6px;
@@ -733,10 +746,15 @@ body {
 .result .body { min-width: 0; }
 .result-row1 {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   margin-bottom: 4px;
   flex-wrap: wrap;
+}
+.file-type-icon {
+  width: 0.8em;
+  height: 1em;
+  flex-shrink: 0;
 }
 .result-row1 .specname {
   font-weight: 600;
@@ -801,6 +819,9 @@ body {
 .result-row2 .sep { color: var(--fg-faint); }
 .result-row2 .section { color: var(--fg); font-weight: 500; }
 .result-row2 .pg { color: var(--fg-muted); }
+.result-row2.result-tags {
+  gap: 6px;
+}
 
 .result .excerpt {
   font-size: 12.5px;

@@ -331,6 +331,7 @@ function App() {
                 cardMode={cardMode}
                 setCardMode={c => { setCardMode(c); setTweak('cardMode', c); }}
                 totalMs={totalMs}
+                tagsData={tagsData}
               />
               <div className="resizer" onMouseDown={onPreviewResizerMouseDown}>
                 <div ref={previewPillRef} className="resizer-pill" />

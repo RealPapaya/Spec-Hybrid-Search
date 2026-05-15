@@ -44,15 +44,33 @@ function DimmableFilterGroup({ title, items, selected, onToggle, onClear, clearL
   );
 }
 
-function ExplorerFilterNode({ name, relPath, node, depth, selected, onToggle, isRoot }) {
+function ExplorerFileNode({ name, relPath, depth, selected, onToggle }) {
+  const on = selected.includes(relPath);
+  const ext = (name.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
+  return (
+    <div className="exf-node" style={{ paddingLeft: depth * 10 }}>
+      <div className={'exf-row exf-row-file' + (on ? ' on' : '')} onClick={() => onToggle(relPath)}>
+        <span className="exf-caret exf-caret-empty"></span>
+        <span className="exf-label">
+          <DocumentIcon ext={ext} className="exf-file-ico" />
+          <span className="label" title={relPath}>{name}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ExplorerFolderNode({ name, relPath, node, depth, selected, onToggle }) {
   const [open, setOpen] = React.useState(true);
   const childEntries = Object.entries(node.children).sort(([a],[b]) => a.localeCompare(b));
+  const files = (node.files || []).slice().sort((a, b) => a.name.localeCompare(b.name));
   const on = selected.includes(relPath);
   const count = node.count;
+  const hasChildren = childEntries.length > 0 || files.length > 0;
   return (
     <div className="exf-node" style={{ paddingLeft: depth * 10 }}>
       <div className={'exf-row' + (on ? ' on' : '')}>
-        {childEntries.length > 0 ? (
+        {hasChildren ? (
           <span className="exf-caret" onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}>
             <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
               <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -67,14 +85,24 @@ function ExplorerFilterNode({ name, relPath, node, depth, selected, onToggle, is
           <span className="count">{count}</span>
         </span>
       </div>
-      {open && childEntries.length > 0 && (
+      {open && hasChildren && (
         <div className="exf-children">
           {childEntries.map(([n, child]) => (
-            <ExplorerFilterNode
-              key={n}
+            <ExplorerFolderNode
+              key={'d:' + n}
               name={n}
               relPath={relPath ? (relPath + '/' + n) : n}
               node={child}
+              depth={depth + 1}
+              selected={selected}
+              onToggle={onToggle}
+            />
+          ))}
+          {files.map(f => (
+            <ExplorerFileNode
+              key={'f:' + f.name}
+              name={f.name}
+              relPath={relPath ? (relPath + '/' + f.name) : f.name}
               depth={depth + 1}
               selected={selected}
               onToggle={onToggle}
@@ -87,25 +115,32 @@ function ExplorerFilterNode({ name, relPath, node, depth, selected, onToggle, is
 }
 
 function ExplorerFilterGroup({ title, allResults, watchedDir, selected, onToggle, onClear, clearLabel }) {
-  const { tree, rootName } = React.useMemo(() => {
+  const tree = React.useMemo(() => {
     const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : '';
-    const rootSeg = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() : '';
-    const root = { children: {}, count: 0 };
+    const root = { children: {}, files: [], count: 0 };
+    const seenPaths = new Set();
     allResults.forEach(r => {
       const fp = (r.filepath || '').replace(/\\/g, '/');
+      if (!fp || seenPaths.has(fp)) return;
+      seenPaths.add(fp);
       const rel = (base && fp.startsWith(base)) ? fp.slice(base.length) : fp;
-      const parts = rel.split('/'); parts.pop();
+      const parts = rel.split('/');
+      const fileName = parts.pop();
       let node = root;
       node.count += 1;
       parts.forEach(part => {
         if (!part) return;
-        if (!node.children[part]) node.children[part] = { children: {}, count: 0 };
+        if (!node.children[part]) node.children[part] = { children: {}, files: [], count: 0 };
         node = node.children[part];
         node.count += 1;
       });
+      if (fileName) node.files.push({ name: fileName });
     });
-    return { tree: root, rootName: rootSeg || 'watched_docs' };
+    return root;
   }, [allResults, watchedDir]);
+
+  const childEntries = Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b));
+  const rootFiles = tree.files.slice().sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="fgroup">
@@ -116,15 +151,29 @@ function ExplorerFilterGroup({ title, allResults, watchedDir, selected, onToggle
       {tree.count === 0 ? (
         <div className="exf-empty">—</div>
       ) : (
-        <ExplorerFilterNode
-          name={rootName}
-          relPath=""
-          node={tree}
-          depth={0}
-          selected={selected}
-          onToggle={onToggle}
-          isRoot={true}
-        />
+        <>
+          {childEntries.map(([n, child]) => (
+            <ExplorerFolderNode
+              key={'d:' + n}
+              name={n}
+              relPath={n}
+              node={child}
+              depth={0}
+              selected={selected}
+              onToggle={onToggle}
+            />
+          ))}
+          {rootFiles.map(f => (
+            <ExplorerFileNode
+              key={'f:' + f.name}
+              name={f.name}
+              relPath={f.name}
+              depth={0}
+              selected={selected}
+              onToggle={onToggle}
+            />
+          ))}
+        </>
       )}
     </div>
   );
