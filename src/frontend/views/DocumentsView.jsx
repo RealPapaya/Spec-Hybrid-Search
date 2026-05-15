@@ -4,6 +4,85 @@ function _countFiles(node) {
   return node.files.length + Object.values(node.children).reduce((s, c) => s + _countFiles(c), 0);
 }
 
+const DOCUMENT_ICON_PATHS = {
+  ppt: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M11 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M16.5 15h3',
+    'M18 15v6',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+  ],
+  xls: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M4 15l4 6',
+    'M4 21l4 -6',
+    'M17 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75',
+    'M11 15v6h3',
+  ],
+  docx: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M2 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
+    'M17 16.5a1.5 1.5 0 0 0 -3 0v3a1.5 1.5 0 0 0 3 0',
+    'M9.5 15a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1 -3 0v-3a1.5 1.5 0 0 1 1.5 -1.5',
+    'M19.5 15l3 6',
+    'M19.5 21l3 -6',
+  ],
+  pdf: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M17 18h2',
+    'M20 15h-3v6',
+    'M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
+  ],
+  folder: [
+    'M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2',
+  ],
+  tag: [
+    'M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
+    'M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3',
+  ],
+};
+
+const DOCUMENT_ICON_EXT_MAP = {
+  PPT: 'ppt',
+  PPTX: 'ppt',
+  XLS: 'xls',
+  XLSX: 'xls',
+  DOC: 'docx',
+  DOCX: 'docx',
+  PDF: 'pdf',
+};
+
+function DocumentIcon({ name, ext, className, fallbackText }) {
+  const normalizedExt = (ext || '').toUpperCase();
+  const iconName = name || DOCUMENT_ICON_EXT_MAP[normalizedExt];
+  const paths = DOCUMENT_ICON_PATHS[iconName];
+
+  if (!paths) {
+    return <span className={className}>{fallbackText || normalizedExt || '?'}</span>;
+  }
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      {paths.map(path => <path key={path} d={path} />)}
+    </svg>
+  );
+}
+
 function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const T = useT();
   const [newName, setNewName] = React.useState('');
@@ -62,7 +141,7 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
           {/* Edit Tag button — hover reveals tag list flyout */}
           <div className="fap-btn-wrap">
             <button className="iconbtn">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9.5V12h2.5l6-6L8 3.5l-6 6z"/><path d="M10.5 1.5l2 2"/></svg>
+              <DocumentIcon name="tag" />
               {T('docs_edit_tag')}
             </button>
             <div className="fap-flyout fap-edit-flyout">
@@ -121,6 +200,7 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
 
 function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const [expanded, setExpanded] = React.useState(false);
+  const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
   return (
@@ -129,7 +209,7 @@ function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
         <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
           <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" style={{ flexShrink: 0, color: 'var(--fg-faint)' }}><path d="M3.5 1h5l3 3v9H3.5z" strokeLinejoin="round"/><path d="M8.5 1v3h3" strokeLinejoin="round"/></svg>
+        <DocumentIcon ext={ext} className="doc-tree-icon" />
         <span className="file-name" title={doc.filepath}>{doc.filename}</span>
         <div className="file-tags">
           {assignedTags.slice(0,2).map(tag => (
@@ -152,7 +232,7 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
         <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
           <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ opacity: 0.55, flexShrink: 0 }}><path d="M1 2.5A1 1 0 0 1 2 1.5h3.1a1 1 0 0 1 .71.3l.69.7H12a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2.5z"/></svg>
+        <DocumentIcon name="folder" className="folder-tree-icon" />
         <span>{name}</span>
         <span className="folder-count">{totalCount}</span>
       </div>
@@ -178,7 +258,7 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
   const sizeStr = doc.file_size ? (doc.file_size >= 1048576 ? (doc.file_size/1048576).toFixed(1)+' MB' : Math.round(doc.file_size/1024)+' KB') : '';
-  const extColors = { PDF: ['#ef4444','#fef2f2'], DOCX: ['#3b82f6','#eff6ff'], XLSX: ['#10b981','#ecfdf5'], PPTX: ['#f59e0b','#fffbeb'] };
+  const extColors = { PDF: ['#ef4444','#fef2f2'], DOC: ['#3b82f6','#eff6ff'], DOCX: ['#3b82f6','#eff6ff'], XLS: ['#10b981','#ecfdf5'], XLSX: ['#10b981','#ecfdf5'], PPT: ['#f59e0b','#fffbeb'], PPTX: ['#f59e0b','#fffbeb'] };
   const [fg, bg] = extColors[ext] || ['var(--fg-faint)','var(--bg-soft)'];
   return (
     <div className={'doc-card' + (expanded ? ' expanded' : '')} onClick={() => setExpanded(prev => !prev)}>
@@ -186,7 +266,9 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
         <svg className="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
           <polyline points="3,1.5 7,5 3,8.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <div className="doc-icon" style={{ color: fg, background: bg, border: '1px solid ' + fg + '33' }}>{ext || '?'}</div>
+        <div className="doc-icon" style={{ color: fg, background: bg, border: '1px solid ' + fg + '33' }}>
+          <DocumentIcon ext={ext} />
+        </div>
         <div className="doc-body">
           <div className="doc-name" title={doc.filepath}>{doc.filename}</div>
           <div className="doc-meta">

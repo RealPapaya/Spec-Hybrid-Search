@@ -1150,6 +1150,25 @@ body {
   flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .explorer-file-row .file-tags { display: flex; gap: 3px; overflow: hidden; flex-shrink: 0; }
+.doc-tree-icon,
+.folder-tree-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--fg-faint);
+}
+.doc-tree-icon {
+  width: 13px;
+  height: 13px;
+}
+span.doc-tree-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+}
 
 /* Document list cards */
 .doc-grid { display: flex; flex-direction: column; }
@@ -1168,6 +1187,10 @@ body {
   display: grid; place-items: center; flex-shrink: 0; margin-top: 1px;
   font-family: var(--font-mono); font-size: 9px; font-weight: 700;
   letter-spacing: 0.02em;
+}
+.doc-icon svg {
+  width: 22px;
+  height: 22px;
 }
 .doc-body { flex: 1; min-width: 0; }
 .doc-name {
