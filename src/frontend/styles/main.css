@@ -117,8 +117,8 @@ body {
 /* App shell */
 .app {
   height: 100vh;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
 }
 
@@ -330,12 +330,13 @@ body {
 }
 .searchbtn:hover { filter: brightness(1.05); }
 
-/* Main grid: filters | resizer | results | resizer | preview */
+/* Main grid: fills remaining height; inner grid for filters | resizer | results | resizer | preview */
 .main {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: var(--rail-w, 240px) 0 minmax(360px, 1fr) 0 var(--preview-w, 460px);
   grid-template-rows: 1fr;
-  min-height: 0;
   overflow: hidden;
 }
 [data-layout="topfilters"] .main {
