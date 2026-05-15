@@ -31,7 +31,7 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
         data-tip={inDocuments ? T('docs_back') : T('docs_nav')}
         style={inDocuments ? { color: 'var(--accent)' } : null}
       >
-        <Icon.folder />
+        <Icon.tag />
         <span style={{ fontSize: '11px' }}>{T('docs_nav')}</span>
       </button>
       <button

@@ -57,10 +57,18 @@ const DOCUMENT_ICON_EXT_MAP = {
   PDF: 'pdf',
 };
 
+const DOCUMENT_ICON_COLORS = {
+  docx: '#3b82f6',  // blue
+  xls: '#10b981',   // green
+  ppt: '#f59e0b',   // yellow/orange
+  pdf: '#ef4444',   // red
+};
+
 function DocumentIcon({ name, ext, className, fallbackText }) {
   const normalizedExt = (ext || '').toUpperCase();
   const iconName = name || DOCUMENT_ICON_EXT_MAP[normalizedExt];
   const paths = DOCUMENT_ICON_PATHS[iconName];
+  const color = DOCUMENT_ICON_COLORS[iconName];
 
   if (!paths) {
     return <span className={className}>{fallbackText || normalizedExt || '?'}</span>;
@@ -71,11 +79,13 @@ function DocumentIcon({ name, ext, className, fallbackText }) {
       className={className}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+
+      stroke={color || "currentColor"}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      style={{ width: '1.4em', height: '1.4em' }}
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       {paths.map(path => <path key={path} d={path} />)}

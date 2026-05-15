@@ -26,7 +26,7 @@ var Icon = {
   arrow:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   list:     () => <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="2" rx="0.5"/><rect x="2" y="7" width="12" height="2" rx="0.5"/><rect x="2" y="11" width="12" height="2" rx="0.5"/></svg>,
   rows:     () => <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="3" rx="0.5"/><rect x="2" y="7" width="12" height="3" rx="0.5"/><rect x="2" y="11" width="12" height="2" rx="0.5"/></svg>,
-  bookmark: () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 2h8v12l-4-3-4 3z" strokeLinejoin="round"/></svg>,
+  bookmark: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4" /></svg>,
   bookmarkFill: () => <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2h8v12l-4-3-4 3z"/></svg>,
   download: () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2v9M4 7l4 4 4-4M2 14h12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   page:     () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4 1.5h5.5L12 4v10.5H4z" strokeLinejoin="round"/><path d="M9.5 1.5V4H12M5.5 7.5h5M5.5 10h5M5.5 12.5h3" strokeLinecap="round"/></svg>,
