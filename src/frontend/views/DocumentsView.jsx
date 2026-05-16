@@ -4,95 +4,6 @@ function _countFiles(node) {
   return node.files.length + Object.values(node.children).reduce((s, c) => s + _countFiles(c), 0);
 }
 
-const DOCUMENT_ICON_PATHS = {
-  ppt: [
-    'M14 3v4a1 1 0 0 0 1 1h4',
-    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
-    'M11 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
-    'M16.5 15h3',
-    'M18 15v6',
-    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
-  ],
-  xls: [
-    'M14 3v4a1 1 0 0 0 1 1h4',
-    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
-    'M4 15l4 6',
-    'M4 21l4 -6',
-    'M17 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75',
-    'M11 15v6h3',
-  ],
-  docx: [
-    'M14 3v4a1 1 0 0 0 1 1h4',
-    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
-    'M2 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
-    'M17 16.5a1.5 1.5 0 0 0 -3 0v3a1.5 1.5 0 0 0 3 0',
-    'M9.5 15a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1 -3 0v-3a1.5 1.5 0 0 1 1.5 -1.5',
-    'M19.5 15l3 6',
-    'M19.5 21l3 -6',
-  ],
-  pdf: [
-    'M14 3v4a1 1 0 0 0 1 1h4',
-    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
-    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
-    'M17 18h2',
-    'M20 15h-3v6',
-    'M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
-  ],
-  folder: [
-    'M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2',
-  ],
-  tag: [
-    'M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
-    'M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3',
-  ],
-};
-
-const DOCUMENT_ICON_EXT_MAP = {
-  PPT: 'ppt',
-  PPTX: 'ppt',
-  XLS: 'xls',
-  XLSX: 'xls',
-  DOC: 'docx',
-  DOCX: 'docx',
-  PDF: 'pdf',
-};
-
-const DOCUMENT_ICON_COLORS = {
-  docx: '#3b82f6',  // blue
-  xls: '#10b981',   // green
-  ppt: '#f59e0b',   // yellow/orange
-  pdf: '#ef4444',   // red
-};
-
-function DocumentIcon({ name, ext, className, fallbackText }) {
-  const normalizedExt = (ext || '').toUpperCase();
-  const iconName = name || DOCUMENT_ICON_EXT_MAP[normalizedExt];
-  const paths = DOCUMENT_ICON_PATHS[iconName];
-  const color = DOCUMENT_ICON_COLORS[iconName];
-
-  if (!paths) {
-    return <span className={className}>{fallbackText || normalizedExt || '?'}</span>;
-  }
-
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-
-      stroke={color || "currentColor"}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={{ width: '1.4em', height: '1.4em' }}
-    >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      {paths.map(path => <path key={path} d={path} />)}
-    </svg>
-  );
-}
-
 function isDocIndexed(doc) {
   return !doc.index_status || doc.index_status === 'indexed';
 }
@@ -107,17 +18,23 @@ function indexStatusLabel(doc, lang) {
   return translate(lang, 'docs_indexing');
 }
 
-function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
+function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true, activeTagFlyout, setActiveTagFlyout }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
   const [newName, setNewName] = React.useState('');
-  const [addInputVisible, setAddInputVisible] = React.useState(false);
   const addInputRef = React.useRef(null);
   const assigned = tagsData.assignments[doc.doc_id] || [];
   const assignedTags = tagsData.customTags.filter(t => assigned.includes(t.id));
   const availableTags = tagsData.customTags.filter(t => !assigned.includes(t.id));
   const canOpen = canOpenDoc(doc);
   const statusLabel = indexStatusLabel(doc, lang);
+  const isTagFlyoutOpen = (type) => activeTagFlyout && activeTagFlyout.docId === doc.doc_id && activeTagFlyout.type === type;
+  const openTagFlyout = (type) => setActiveTagFlyout({ docId: doc.doc_id, type });
+  const closeTagFlyout = (type) => {
+    setActiveTagFlyout(current => (
+      current && current.docId === doc.doc_id && current.type === type ? null : current
+    ));
+  };
 
   const setDocTags = (nextIds) => {
     const assignments = { ...(tagsData.assignments || {}) };
@@ -153,8 +70,8 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
 
   // Focus the add-tag input when it becomes visible
   React.useEffect(() => {
-    if (addInputVisible && addInputRef.current) addInputRef.current.focus();
-  }, [addInputVisible]);
+    if (isTagFlyoutOpen('add') && addInputRef.current) addInputRef.current.focus();
+  }, [activeTagFlyout]);
 
   return (
     <div className="file-action-panel" onClick={e => e.stopPropagation()}>
@@ -173,12 +90,16 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
       {allowTagEdit && (
         <>
           {/* Edit Tag button — hover reveals tag list flyout */}
-          <div className="fap-btn-wrap">
+          <div
+            className={'fap-btn-wrap' + (isTagFlyoutOpen('edit') ? ' fap-btn-wrap-open' : '')}
+            onMouseEnter={() => openTagFlyout('edit')}
+            onMouseLeave={() => closeTagFlyout('edit')}
+          >
             <button className="iconbtn">
               <DocumentIcon name="tag" />
               {T('docs_edit_tag')}
             </button>
-            <div className="fap-flyout fap-edit-flyout">
+            <div className={'fap-flyout fap-edit-flyout' + (isTagFlyoutOpen('edit') ? ' fap-flyout-open' : '')}>
               {tagsData.customTags.length === 0 && (
                 <div className="fap-flyout-empty">{T('docs_no_tags')}</div>
               )}
@@ -206,24 +127,28 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
           </div>
 
           {/* Add Tag button — hover reveals text input flyout */}
-          <div className="fap-btn-wrap">
-            <button className="iconbtn" onClick={() => setAddInputVisible(v => !v)}>
+          <div
+            className={'fap-btn-wrap' + (isTagFlyoutOpen('add') ? ' fap-btn-wrap-open' : '')}
+            onMouseEnter={() => openTagFlyout('add')}
+            onMouseLeave={() => closeTagFlyout('add')}
+          >
+            <button className="iconbtn" onClick={() => openTagFlyout('add')}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>
               {T('docs_add_tag')}
             </button>
-            <div className={"fap-flyout fap-add-flyout" + (addInputVisible ? ' fap-add-visible' : '')}>
+            <div className={'fap-flyout fap-add-flyout' + (isTagFlyoutOpen('add') ? ' fap-flyout-open' : '')}>
               <input
                 ref={addInputRef}
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') { createAndAssignTag(); setAddInputVisible(false); }
-                  if (e.key === 'Escape') setAddInputVisible(false);
+                  if (e.key === 'Enter') { createAndAssignTag(); closeTagFlyout('add'); }
+                  if (e.key === 'Escape') closeTagFlyout('add');
                   e.stopPropagation();
                 }}
                 placeholder={T('docs_new_tag')}
               />
-              <button onClick={() => { createAndAssignTag(); setAddInputVisible(false); }}>{T('docs_add')}</button>
+              <button onClick={() => { createAndAssignTag(); closeTagFlyout('add'); }}>{T('docs_add')}</button>
             </div>
           </div>
         </>
@@ -232,7 +157,7 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
   );
 }
 
-function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
+function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true, activeTagFlyout, setActiveTagFlyout }) {
   const lang = React.useContext(LangCtx);
   const [expanded, setExpanded] = React.useState(false);
   const ext = (doc.filename.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
@@ -254,12 +179,12 @@ function ExplorerFileRow({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
           ))}
         </div>
       </div>
-      {expanded && <FileActionPanel doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpen} allowTagEdit={allowTagEdit} />}
+      {expanded && <FileActionPanel doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpen} allowTagEdit={allowTagEdit} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />}
     </div>
   );
 }
 
-function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onOpenFile, allowTagEdit = true }) {
+function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onOpenFile, allowTagEdit = true, activeTagFlyout, setActiveTagFlyout }) {
   const [open, setOpen] = React.useState(depth === 0);
   const childEntries = Object.entries(children).sort(([a],[b]) => a.localeCompare(b));
   const totalCount = _countFiles({ children, files });
@@ -276,10 +201,10 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
       {open && (
         <div className="explorer-children">
           {childEntries.map(([n, node]) => (
-            <ExplorerNode key={n} name={n} {...node} depth={depth+1} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={onOpenFile} allowTagEdit={allowTagEdit} />
+            <ExplorerNode key={n} name={n} {...node} depth={depth+1} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={onOpenFile} allowTagEdit={allowTagEdit} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />
           ))}
           {files.map(doc => (
-            <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpenFile} allowTagEdit={allowTagEdit} />
+            <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpenFile} allowTagEdit={allowTagEdit} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />
           ))}
         </div>
       )}
@@ -287,7 +212,7 @@ function ExplorerNode({ name, children, files, depth, tagsData, setTagsData, onO
   );
 }
 
-function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
+function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true, activeTagFlyout, setActiveTagFlyout }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
   const [expanded, setExpanded] = React.useState(false);
@@ -326,7 +251,7 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
           )}
         </div>
       </div>
-      {expanded && <FileActionPanel doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpen} allowTagEdit={allowTagEdit} />}
+      {expanded && <FileActionPanel doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={onOpen} allowTagEdit={allowTagEdit} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />}
     </div>
   );
 }
@@ -346,6 +271,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir, onWatchDirCh
   const [newTagName, setNewTagName] = React.useState('');
   const [newTagColor, setNewTagColor] = React.useState('#6366f1');
   const [addingTag, setAddingTag] = React.useState(false);
+  const [activeTagFlyout, setActiveTagFlyout] = React.useState(null);
   const newTagInputRef = React.useRef(null);
   const [filterText, setFilterText] = React.useState('');
 
@@ -703,16 +629,16 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir, onWatchDirCh
           ) : viewMode === 'explorer' ? (
             <div className="explorer-root">
               {Object.entries(tree.children).sort(([a],[b]) => a.localeCompare(b)).map(([n, node]) => (
-                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} allowTagEdit={true} />
+                <ExplorerNode key={n} name={n} {...node} depth={0} tagsData={tagsData} setTagsData={setTagsData} onOpenFile={openDoc} allowTagEdit={true} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />
               ))}
               {tree.files.map(doc => (
-                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} />
+                <ExplorerFileRow key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />
               ))}
             </div>
           ) : (
             <div className="doc-grid">
               {filtered.map(doc => (
-                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} />
+                <DocCard key={doc.doc_id} doc={doc} tagsData={tagsData} setTagsData={setTagsData} onOpen={openDoc} allowTagEdit={true} activeTagFlyout={activeTagFlyout} setActiveTagFlyout={setActiveTagFlyout} />
               ))}
             </div>
           )}

@@ -1,28 +1,5 @@
-// ResultRow / OccurrenceRow / ResultsPanel — list of search results with
+// ResultRow / OccurrenceRow / ResultsPanel - list of search results with
 // list header + load-more for occurrence view.
-
-function FileTypeIcon({ type }) {
-  const colors = {
-    'PDF': '#E74C3C',
-    'DOCX': '#3498DB',
-    'DOC': '#3498DB',
-    'XLSX': '#27AE60',
-    'XLS': '#27AE60',
-    'PPTX': '#E67E22',
-    'PPT': '#E67E22',
-    'TXT': '#95A5A6',
-  };
-  const color = colors[type] || '#7F8C8D';
-
-  return (
-    <svg className="file-type-icon" viewBox="0 0 16 20" aria-hidden="true">
-      <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill={color} opacity="0.15" />
-      <path d="M2 0C0.9 0 0 0.9 0 2v16c0 1.1 0.9 2 2 2h12c1.1 0 2-0.9 2-2V6l-6-6H2z" fill="none" stroke={color} strokeWidth="1.5" />
-      <path d="M10 0v6h6" fill="none" stroke={color} strokeWidth="1.5" />
-      <text x="8" y="15" textAnchor="middle" fontSize="5" fontWeight="600" fill={color}>{type}</text>
-    </svg>
-  );
-}
 
 function ResultRow({ result, index, selected, onSelect, tagsData = { customTags: [], assignments: {} } }) {
   const T = useT();
@@ -35,12 +12,12 @@ function ResultRow({ result, index, selected, onSelect, tagsData = { customTags:
       <div className="num">#{String(index + 1).padStart(2, '0')}</div>
       <div className="body">
         <div className="result-row1">
-          {result.type && <FileTypeIcon type={result.type} />}
+          {result.type && <DocumentIcon ext={result.type} className="file-type-icon" fallbackText={result.type} />}
           <span className="specname">{result.spec}</span>
           <span className="spacer"></span>
           {result.occurrencesInChunk > 1 && (
             <span className="occ-pill" data-tip={T('occurrences_in_chunk_tip')}>
-              {result.occurrencesInChunk}×
+              {result.occurrencesInChunk}x
             </span>
           )}
           <span className={'score-pill' + sc}>{score.toFixed(4)}</span>
@@ -56,10 +33,6 @@ function ResultRow({ result, index, selected, onSelect, tagsData = { customTags:
           {result.section && <span className="section">{result.section}</span>}
         </div>
         <div className="excerpt">{highlightText(result.excerpt, result.excerptHighlight || result.highlight)}</div>
-        <div className="result-row4">
-          <span className="scoreitem" data-tip={T('score_bm25_tip')}><span className="dot bm"></span>BM25 {(result.bm25 || 0).toFixed(2)}</span>
-          <span className="scoreitem" data-tip={T('score_cos_tip')}><span className="dot sem"></span>cos {(result.semantic || 0).toFixed(2)}</span>
-        </div>
       </div>
     </div>
   );
@@ -71,9 +44,9 @@ function OccurrenceRow({ result, index, selected, onSelect }) {
   return (
     <div className={'occ-row' + (selected ? ' selected' : '')} onClick={() => onSelect(result.id)}>
       <div className="occ-num">#{String(index + 1).padStart(4, '0')}</div>
-      {result.type && <FileTypeIcon type={result.type} />}
+      {result.type && <DocumentIcon ext={result.type} className="file-type-icon" fallbackText={result.type} />}
       <span className="occ-spec" title={result.specShort}>{result.spec}</span>
-      <span className="occ-page">{result.page ? ('p.' + result.page) : '—'}</span>
+      <span className="occ-page">{result.page ? ('p.' + result.page) : '-'}</span>
       <span className="occ-snippet">{highlightText(result.snippet || result.excerpt, result.snippetHighlight || result.highlight)}</span>
     </div>
   );

@@ -1,4 +1,4 @@
-// PreviewPanel — right-side panel: doc meta + score bars + tabbed body
+// PreviewPanel - right-side panel: doc meta + score bars + tabbed body
 // (context / match / metadata / document chunks) + action buttons (open / download / copy).
 
 function RelatedTab({ result, results = [], onSelect }) {
@@ -30,13 +30,11 @@ function RelatedTab({ result, results = [], onSelect }) {
   const currentPage = result.page || 0;
 
   const handleChunkClick = (chunk) => {
-    // Find a matching result in the results list (same doc + page)
     const match = results.find(r => r.doc_id === result.doc_id && (r.page || 0) === (chunk.page || 0));
     if (match && onSelect) {
       onSelect(match.id);
       setInlineChunk(null);
     } else {
-      // No matching result — show inline
       setInlineChunk(inlineChunk?.chunk_index === chunk.chunk_index ? null : chunk);
     }
   };
@@ -45,7 +43,7 @@ function RelatedTab({ result, results = [], onSelect }) {
     <div style={{ fontSize: 12.5 }}>
       <div style={{ marginBottom: 10, color: 'var(--fg-muted)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
         {T('other_chunks')} <strong style={{ color: 'var(--fg)' }}>{result.spec}</strong>
-        <span style={{ marginLeft: 6, color: 'var(--fg-faint)' }}>· {chunks.length} {lang === 'zh' ? '個區塊' : 'chunks'}</span>
+        <span style={{ marginLeft: 6, color: 'var(--fg-faint)' }}>· {chunks.length} {lang === 'zh' ? '段落' : 'chunks'}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {chunks.map(chunk => {
@@ -68,7 +66,7 @@ function RelatedTab({ result, results = [], onSelect }) {
                 onMouseLeave={e => { if (!isCurrent && !isInline) e.currentTarget.style.background = 'var(--bg-soft)'; }}
               >
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-faint)', flexShrink: 0, minWidth: 40 }}>
-                  {lang === 'zh' ? '第' : 'p.'}{chunk.page || '—'}
+                  {lang === 'zh' ? '頁 ' : 'p.'}{chunk.page || '-'}
                 </span>
                 <span style={{ color: 'var(--fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontSize: 11.5 }}>
                   {(chunk.text || '').slice(0, 80)}
@@ -80,7 +78,7 @@ function RelatedTab({ result, results = [], onSelect }) {
                 )}
                 {isCurrent && (
                   <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--border-focus)', flexShrink: 0 }}>
-                    ★
+                    *
                   </span>
                 )}
               </button>
@@ -105,11 +103,17 @@ function RelatedTab({ result, results = [], onSelect }) {
 function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookmarks = () => {} }) {
   const T = useT();
   const [tab, setTab] = React.useState('context');
-  const [flash, setFlash] = React.useState('');
+  const [copiedAction, setCopiedAction] = React.useState('');
+  const copiedTimerRef = React.useRef(null);
 
-  const showFlash = React.useCallback((msg) => {
-    setFlash(msg);
-    setTimeout(() => setFlash(''), 1200);
+  const showCopied = React.useCallback((action) => {
+    window.clearTimeout(copiedTimerRef.current);
+    setCopiedAction(action);
+    copiedTimerRef.current = window.setTimeout(() => setCopiedAction(''), 900);
+  }, []);
+
+  React.useEffect(() => {
+    return () => window.clearTimeout(copiedTimerRef.current);
   }, []);
 
   if (!result) {
@@ -162,16 +166,16 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
   const copyText = async () => {
     try {
       await navigator.clipboard.writeText(result.context.match || result.excerpt || '');
-      showFlash(T('copy_text') + ' ✓');
-    } catch(e) { showFlash('✗'); }
+      showCopied('text');
+    } catch(e) {}
   };
 
   const copyCitation = async () => {
     const cite = result.spec + (result.page ? ', p. ' + result.page : '');
     try {
       await navigator.clipboard.writeText(cite);
-      showFlash(T('copy_citation') + ' ✓');
-    } catch(e) { showFlash('✗'); }
+      showCopied('citation');
+    } catch(e) {}
   };
 
   const fused = result.score, bm = result.bm25, sem = result.semantic;
@@ -197,11 +201,6 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
     <section className="preview">
       <div className="preview-head">
         <div className="crumbs"></div>
-        {flash && (
-          <span style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
-            {flash}
-          </span>
-        )}
         <button
           className="iconbtn"
           onClick={toggleBookmark}
@@ -278,8 +277,18 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
       </div>
 
       <div className="preview-actions">
-        <button className="iconbtn" onClick={copyCitation}><Icon.copy /> {T('copy_citation')}</button>
-        <button className="iconbtn" onClick={copyText}><Icon.copy /> {T('copy_text')}</button>
+        <button
+          className={'iconbtn copy-action-btn' + (copiedAction === 'citation' ? ' copied' : '')}
+          onClick={copyCitation}
+        >
+          {copiedAction === 'citation' ? <Icon.check /> : <Icon.copy />} {T('copy_citation')}
+        </button>
+        <button
+          className={'iconbtn copy-action-btn' + (copiedAction === 'text' ? ' copied' : '')}
+          onClick={copyText}
+        >
+          {copiedAction === 'text' ? <Icon.check /> : <Icon.copy />} {T('copy_text')}
+        </button>
         <span className="spacer"></span>
         <button className="iconbtn" onClick={downloadFile}><Icon.download /> {T('download_pdf')}</button>
       </div>

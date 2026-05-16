@@ -591,47 +591,49 @@ body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--rail-w, 240px) 0 minmax(360px, 1fr) 0 var(--preview-w, 460px);
+  grid-template-columns: var(--rail-w, 240px) 14px minmax(360px, 1fr) 14px var(--preview-w, 460px);
   grid-template-rows: 1fr;
   overflow: hidden;
 }
 [data-layout="topfilters"] .main {
-  grid-template-columns: minmax(360px, 1fr) 0 var(--preview-w, 460px);
+  grid-template-columns: minmax(360px, 1fr) 14px var(--preview-w, 460px);
 }
 
 /* Resizer pill */
 .resizer {
   position: relative;
-  width: 0;
+  width: 14px;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: col-resize;
+  touch-action: none;
 }
 .resizer::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -8px;
-  width: 16px;
+  left: 0;
+  width: 100%;
 }
 .resizer-pill {
   position: absolute;
-  left: -4px;
-  width: 8px;
+  left: 50%;
+  width: 4px;
   height: 28px;
   border-radius: 4px;
   background: transparent;
   cursor: col-resize;
+  transform: translateX(-50%);
   transition: background 0.15s, transform 0.15s;
   pointer-events: none;
 }
 .resizer:hover .resizer-pill,
 .resizer-pill.dragging {
   background: var(--accent);
-  transform: scaleX(1.25);
+  transform: translateX(-50%) scaleX(1.5);
 }
 [data-layout="topfilters"] .filters-rail { display: none; }
 [data-layout="topfilters"] .topfilters { display: flex; }
@@ -1007,8 +1009,8 @@ body {
   flex-wrap: wrap;
 }
 .file-type-icon {
-  width: 0.8em;
-  height: 1em;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 .result-row1 .specname {
@@ -1361,6 +1363,20 @@ body {
   background: var(--bg-elev);
 }
 .preview-actions .spacer { flex: 1; }
+.preview-actions .copy-action-btn {
+  transition: background 0.1s, border-color 0.1s, color 0.1s, transform 0.08s, box-shadow 0.1s;
+}
+.preview-actions .copy-action-btn:active {
+  transform: translateY(1px);
+  background: var(--bg-soft);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
+}
+.preview-actions .copy-action-btn.copied {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elev));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
 
 /* Statusbar */
 .statusbar {
@@ -1655,6 +1671,14 @@ span.doc-tree-icon {
   position: relative;
   display: inline-flex;
 }
+.fap-btn-wrap-open::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 220px;
+  height: 8px;
+}
 
 /* Shared flyout styles */
 .fap-flyout {
@@ -1674,17 +1698,7 @@ span.doc-tree-icon {
   transform: translateY(-4px);
   transition: opacity 0.12s, transform 0.12s;
 }
-/* Show edit flyout on hover */
-.fap-btn-wrap:hover .fap-edit-flyout,
-.fap-btn-wrap:focus-within .fap-edit-flyout {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-/* Show add flyout when .fap-add-visible is set or on hover */
-.fap-flyout.fap-add-visible,
-.fap-btn-wrap:hover .fap-add-flyout,
-.fap-btn-wrap:focus-within .fap-add-flyout {
+.fap-flyout.fap-flyout-open {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -2164,7 +2178,7 @@ span.doc-tree-icon {
 }
 .occ-row {
   display: grid;
-  grid-template-columns: 56px 18px minmax(120px, 1fr) 44px minmax(0, 2fr);
+  grid-template-columns: 56px 24px minmax(120px, 1fr) 44px minmax(0, 2fr);
   align-items: center;
   gap: 8px;
   height: 36px;
@@ -2173,6 +2187,10 @@ span.doc-tree-icon {
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
+}
+.occ-row .file-type-icon {
+  width: 22px;
+  height: 22px;
 }
 .occ-row:hover { background: var(--bg-hover); }
 .occ-row.selected {

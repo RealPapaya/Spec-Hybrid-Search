@@ -32,6 +32,94 @@ function highlightText(text, terms) {
 function vendorClass(v) { return v.toLowerCase().replace(/[^a-z]/g, ''); }
 function scoreClass(s) { return s >= 0.9 ? '' : s >= 0.85 ? ' mid' : ' low'; }
 
+const DOCUMENT_ICON_PATHS = {
+  ppt: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M11 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M16.5 15h3',
+    'M18 15v6',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+  ],
+  xls: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M4 15l4 6',
+    'M4 21l4 -6',
+    'M17 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75',
+    'M11 15v6h3',
+  ],
+  docx: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M2 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
+    'M17 16.5a1.5 1.5 0 0 0 -3 0v3a1.5 1.5 0 0 0 3 0',
+    'M9.5 15a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1 -3 0v-3a1.5 1.5 0 0 1 1.5 -1.5',
+    'M19.5 15l3 6',
+    'M19.5 21l3 -6',
+  ],
+  pdf: [
+    'M14 3v4a1 1 0 0 0 1 1h4',
+    'M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4',
+    'M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6',
+    'M17 18h2',
+    'M20 15h-3v6',
+    'M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1',
+  ],
+  folder: [
+    'M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2',
+  ],
+  tag: [
+    'M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
+    'M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3',
+  ],
+};
+
+const DOCUMENT_ICON_EXT_MAP = {
+  PPT: 'ppt',
+  PPTX: 'ppt',
+  XLS: 'xls',
+  XLSX: 'xls',
+  DOC: 'docx',
+  DOCX: 'docx',
+  PDF: 'pdf',
+};
+
+const DOCUMENT_ICON_COLORS = {
+  docx: '#3b82f6',
+  xls: '#10b981',
+  ppt: '#f59e0b',
+  pdf: '#ef4444',
+};
+
+function DocumentIcon({ name, ext, className, fallbackText }) {
+  const normalizedExt = (ext || '').toUpperCase();
+  const iconName = name || DOCUMENT_ICON_EXT_MAP[normalizedExt];
+  const paths = DOCUMENT_ICON_PATHS[iconName];
+  const color = DOCUMENT_ICON_COLORS[iconName];
+
+  if (!paths) {
+    return <span className={className}>{fallbackText || normalizedExt || '?'}</span>;
+  }
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color || "currentColor"}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={className ? null : { width: '1.4em', height: '1.4em' }}
+    >
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      {paths.map(path => <path key={path} d={path} />)}
+    </svg>
+  );
+}
+
 var Icon = {
   search:   () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="7" cy="7" r="5" /><path d="M11 11l3 3" strokeLinecap="round" /></svg>,
   check:    () => <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" /></svg>,
