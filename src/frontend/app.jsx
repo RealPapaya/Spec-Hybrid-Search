@@ -9,11 +9,18 @@ function App() {
   const [lang,     setLang]     = React.useState(saved.lang     || 'en');
   const [query,    setQuery]    = React.useState('');
   const [mode,     setMode]     = React.useState('hybrid');
+  const [searchView, setSearchView] = React.useState('documents');
+  const [wholeWord, setWholeWord] = React.useState(false);
   const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [], tags: [], folder: [] });
   const [selectedId, setSelectedId] = React.useState(null);
   const [sortKey,  setSortKey]  = React.useState('score');
   const [cardMode, setCardMode] = React.useState(saved.cardMode || 'detailed');
   const [totalMs, setTotalMs]   = React.useState(0);
+  const [summary, setSummary]   = React.useState({
+    view: 'documents', totalOccurrences: 0, totalChunks: 0, totalDocuments: 0,
+    capped: false, offset: 0, limit: null,
+  });
+  const [loadingMore, setLoadingMore] = React.useState(false);
 
   // Tags data (custom tags + assignments, persisted in localStorage)
   const [tagsData, setTagsData] = React.useState(loadTagsData);
@@ -198,21 +205,43 @@ function App() {
 
   const allResults = results;
 
+  const buildSearchUrl = React.useCallback((q, opts) => {
+    const params = new URLSearchParams();
+    params.set('q', q);
+    params.set('view', opts.view);
+    if (opts.view === 'documents') {
+      params.set('mode', opts.mode === 'bm25' ? 'keyword' : opts.mode);
+    } else {
+      params.set('mode', 'keyword');
+      params.set('whole_word', opts.wholeWord ? 'true' : 'false');
+      params.set('limit', String(opts.limit ?? 200));
+      params.set('offset', String(opts.offset ?? 0));
+    }
+    return '/api/search?' + params.toString();
+  }, []);
+
   const onSearch = React.useCallback(async () => {
     if (!query.trim()) return;
     const t0 = Date.now();
     setLoading(true);
     setError(null);
     try {
-      const modeParam = mode === 'bm25' ? 'keyword' : mode;
-      const res = await fetch(
-        '/api/search?q=' + encodeURIComponent(query) +
-        '&mode=' + modeParam
-      );
+      const url = buildSearchUrl(query, { view: searchView, mode, wholeWord, offset: 0 });
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Server error ' + res.status);
       const data = await res.json();
-      const mapped = (data.results || []).map((r, i) => mapResult(r, query, i));
+      const mapFn = searchView === 'occurrences' ? mapOccurrence : mapResult;
+      const mapped = (data.results || []).map((r, i) => mapFn(r, query, i));
       setResults(mapped);
+      setSummary({
+        view: data.view || searchView,
+        totalOccurrences: data.total_occurrences || 0,
+        totalChunks:      data.total_chunks      || 0,
+        totalDocuments:   data.total_documents   || 0,
+        capped:           !!data.capped,
+        offset:           data.offset || 0,
+        limit:            data.limit  ?? null,
+      });
       setTotalMs(data.took_ms != null ? Math.round(data.took_ms) : Date.now() - t0);
       setHasSearched(true);
       setSelectedId(mapped.length > 0 ? mapped[0].id : null);
@@ -221,7 +250,29 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [query, mode]);
+  }, [query, mode, searchView, wholeWord, buildSearchUrl]);
+
+  const onLoadMore = React.useCallback(async () => {
+    if (loadingMore || searchView !== 'occurrences') return;
+    if (!summary.limit || results.length >= summary.totalOccurrences) return;
+    setLoadingMore(true);
+    try {
+      const nextOffset = results.length;
+      const url = buildSearchUrl(query, {
+        view: searchView, mode, wholeWord, offset: nextOffset, limit: summary.limit,
+      });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const data = await res.json();
+      const startIdx = results.length;
+      const more = (data.results || []).map((r, i) => mapOccurrence(r, query, startIdx + i));
+      setResults(prev => [...prev, ...more]);
+    } catch(e) {
+      setError(e.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [query, mode, searchView, wholeWord, loadingMore, summary, results.length, buildSearchUrl]);
 
   const watchedDir = status.watched_docs_dir || '';
   const filtered = React.useMemo(() => {
@@ -245,10 +296,15 @@ function App() {
       }
       return true;
     });
-    if      (sortKey === 'name') rs = [...rs].sort((a, b) => a.spec.localeCompare(b.spec));
-    else                         rs = [...rs].sort((a, b) => b.score - a.score);
+    // Occurrences view: preserve backend's document-order traversal (Ctrl+F feel).
+    // Score sort would scramble multi-doc results since chunks of the same doc
+    // share BM25 — only the across-doc order would change, breaking the flow.
+    if (summary.view !== 'occurrences') {
+      if (sortKey === 'name') rs = [...rs].sort((a, b) => a.spec.localeCompare(b.spec));
+      else                    rs = [...rs].sort((a, b) => b.score - a.score);
+    }
     return rs;
-  }, [filters, sortKey, allResults, tagsData, watchedDir]);
+  }, [filters, sortKey, allResults, tagsData, watchedDir, summary.view]);
 
   React.useEffect(() => {
     if (filtered.length && !filtered.find(r => r.id === selectedId)) {
@@ -277,7 +333,15 @@ function App() {
           view={view} setView={setView}
           bookmarkCount={bookmarkCount}
         />
-        {inSearch && <SearchRow query={query} setQuery={setQuery} mode={mode} setMode={setMode} onSearch={onSearch} />}
+        {inSearch && (
+          <SearchRow
+            query={query} setQuery={setQuery}
+            mode={mode} setMode={setMode}
+            view={searchView} setView={setSearchView}
+            wholeWord={wholeWord} setWholeWord={setWholeWord}
+            onSearch={onSearch}
+          />
+        )}
         {inSearch && <TopFilters filters={filters} setFilters={setFilters} allResults={allResults} />}
         <div className={`main ${(inSearch && !hasSearched) ? 'empty-state' : ''}`}>
           {inDocuments ? (
@@ -328,6 +392,10 @@ function App() {
                 setCardMode={c => { setCardMode(c); setTweak('cardMode', c); }}
                 totalMs={totalMs}
                 tagsData={tagsData}
+                view={summary.view}
+                summary={summary}
+                onLoadMore={onLoadMore}
+                loadingMore={loadingMore}
               />
               <div className="resizer" onMouseDown={onPreviewResizerMouseDown}>
                 <div ref={previewPillRef} className="resizer-pill" />
@@ -336,7 +404,7 @@ function App() {
             </>
           )}
         </div>
-        <StatusBar totalMs={totalMs} mode={mode} results={filtered} />
+        <StatusBar totalMs={totalMs} mode={mode} results={filtered} summary={summary} />
 
         <TweaksPanel title={prefsTitle}>
 

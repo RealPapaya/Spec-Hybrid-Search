@@ -125,12 +125,13 @@ def search_vector(
 
     return [
         {
-            "doc_id":     h.payload["doc_id"],
-            "filename":   h.payload.get("filename", ""),
-            "filepath":   h.payload.get("filepath", ""),
-            "chunk_text": h.payload.get("text", ""),
-            "page":       h.payload.get("page"),
-            "score":      h.score,
+            "doc_id":      h.payload["doc_id"],
+            "filename":    h.payload.get("filename", ""),
+            "filepath":    h.payload.get("filepath", ""),
+            "chunk_text":  h.payload.get("text", ""),
+            "chunk_index": h.payload.get("chunk_index"),
+            "page":        h.payload.get("page"),
+            "score":       h.score,
         }
         for h in hits
     ]

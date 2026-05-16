@@ -24,6 +24,16 @@ var DICT = {
     search_empty_hint: "Drop PDF, DOCX, XLSX, or PPTX files into the watched_docs folder, then type a query above",
     coming_soon: "Coming soon",
     coming_soon_short: "(soon)",
+    view_documents: "Documents",
+    view_occurrences: "All matches",
+    view_tip: "Documents = ranked chunks. All matches = every Ctrl+F-style occurrence.",
+    whole_word: "Whole word",
+    whole_word_tip: "Match the whole word only (e.g. 'bios' won't match 'biosphere').",
+    matches_n: "matches",
+    occurrences_in_chunk_tip: "Number of times the query appears in this chunk.",
+    match_at: "match @",
+    load_more: "Load more",
+    loading_more: "Loading…",
 
     // filters
     f_vendor: "Document",
@@ -140,6 +150,8 @@ var DICT = {
     sb_alpha: "RRF fusion (BM25 + cosine)",
     sb_cache: "fastembed · ONNX",
     sb_chunks: "chunks",
+    sb_docs: "docs",
+    sb_matches: "matches",
 
     // tweaks
     tw_layout: "Layout",
@@ -194,6 +206,16 @@ var DICT = {
     search_empty_hint: "將 PDF、DOCX、XLSX、PPTX 放入 watched_docs 資料夾，輸入關鍵字即可搜尋",
     coming_soon: "實作中",
     coming_soon_short: "(實作中)",
+    view_documents: "文件",
+    view_occurrences: "所有命中",
+    view_tip: "文件 = 排序後的區塊。所有命中 = 每一個 Ctrl+F 字面命中。",
+    whole_word: "整字匹配",
+    whole_word_tip: "僅匹配獨立單字 (例如「bios」不會匹配「biosphere」)。",
+    matches_n: "命中",
+    occurrences_in_chunk_tip: "查詢字串在此區塊中出現的次數。",
+    match_at: "位置 @",
+    load_more: "載入更多",
+    loading_more: "載入中…",
 
     f_vendor: "文件",
     f_explorer: "搜尋到的檔案",
@@ -304,6 +326,8 @@ var DICT = {
     sb_alpha: "RRF 融合 (BM25 + 餘弦)",
     sb_cache: "fastembed · ONNX",
     sb_chunks: "區塊",
+    sb_docs: "文件",
+    sb_matches: "命中",
 
     tw_layout: "版面",
     tw_language: "語言",

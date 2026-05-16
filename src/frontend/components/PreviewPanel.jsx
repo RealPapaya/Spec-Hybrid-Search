@@ -249,7 +249,15 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
             {highlightText(result.context.before, result.highlight)}
           </div>
           <div className="ctx-block match">
-            <div className="ctx-label">{T('ctx_matched')} · {T('page_short')} {result.page}</div>
+            <div className="ctx-label">
+              {T('ctx_matched')} · {T('page_short')} {result.page}
+              {result.view === 'occurrences' && Number.isFinite(result.matchPosition) && (
+                <span className="ctx-occ-pos"> · {T('match_at')} #{result.matchPosition}</span>
+              )}
+              {result.occurrencesInChunk > 1 && (
+                <span className="ctx-occ-count"> · {result.occurrencesInChunk} {T('matches_n')}</span>
+              )}
+            </div>
             {highlightText(result.context.match, result.highlight)}
           </div>
           <div className="ctx-block">
