@@ -141,8 +141,8 @@ body {
 .topbar {
   display: flex;
   align-items: center;
-  height: 44px;
-  padding: 0 16px;
+  min-height: 54px;
+  padding: 0 18px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
   gap: 12px;
@@ -184,21 +184,6 @@ body {
   border-left: 1px solid var(--border);
 }
 .topbar .spacer { flex: 1; }
-.topbar .meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--fg-muted);
-}
-.topbar .meta .dot {
-  display: inline-block;
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--score-good);
-  margin-right: 5px;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--score-good) 25%, transparent);
-}
 .iconbtn {
   height: 26px;
   min-width: 26px;
@@ -227,6 +212,15 @@ body {
   border-color: var(--border);
 }
 .iconbtn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.topbar .iconbtn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 11px;
+}
+.topbar .iconbtn svg {
+  width: 15px;
+  height: 15px;
+}
 .iconbtn-settings {
   width: 28px;
   height: 28px;
@@ -240,6 +234,11 @@ body {
   transition: transform .35s cubic-bezier(.34,1.56,.64,1);
 }
 .iconbtn-settings:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+.topbar .iconbtn-settings {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+}
 
 /* Search bar row */
 .searchrow {
@@ -590,7 +589,11 @@ body {
   user-select: none;
 }
 .exf-row:hover { background: var(--bg-soft); }
-.exf-row.on { background: var(--bg-soft); color: var(--accent); }
+.exf-row.excluded {
+  opacity: 0.42;
+  filter: grayscale(1);
+  color: var(--fg-faint);
+}
 .exf-caret {
   display: inline-flex;
   align-items: center;
@@ -620,14 +623,14 @@ body {
   font-size: 10.5px;
   color: var(--fg-faint);
 }
-.exf-row.on .exf-label .count { color: var(--accent); }
+.exf-row.excluded .exf-label .count { color: var(--fg-faint); }
 .exf-folder-ico {
   width: 1.2em;
   height: 1.2em;
   color: var(--fg-faint);
   flex-shrink: 0;
 }
-.exf-row.on .exf-folder-ico { color: var(--accent); }
+.exf-row.excluded .exf-folder-ico { color: var(--fg-faint); }
 .exf-file-ico {
   width: 1.2em;
   height: 1.2em;
@@ -640,7 +643,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.exf-row-file.on .exf-label .label { color: var(--accent); }
+.exf-row-file.excluded .exf-label .label { color: var(--fg-faint); }
 
 .range-row {
   display: flex; align-items: center; gap: 6px;

@@ -4,12 +4,22 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
   const confirm = useConfirm();
-  const items = React.useMemo(
+  const [filterText, setFilterText] = React.useState('');
+  const allItems = React.useMemo(
     () => Object.entries(bookmarks)
       .map(([key, b]) => ({ key, ...b }))
       .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)),
     [bookmarks],
   );
+  const items = React.useMemo(() => {
+    if (!filterText.trim()) return allItems;
+    const q = filterText.toLowerCase();
+    return allItems.filter(b =>
+      (b.filename || '').toLowerCase().includes(q) ||
+      (b.filepath || '').toLowerCase().includes(q) ||
+      (b.snippet || '').toLowerCase().includes(q)
+    );
+  }, [allItems, filterText]);
 
   const remove = (key) => {
     const next = { ...bookmarks };
@@ -18,10 +28,10 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
     saveBookmarks(next);
   };
 
-    const clearAll = async () => {
+  const clearAll = async () => {
     const msg = lang === 'zh'
-      ? `確定要清空全部 ${items.length} 筆收藏？`
-      : `Clear all ${items.length} bookmarks?`;
+      ? `確定要清空全部 ${allItems.length} 筆收藏？`
+      : `Clear all ${allItems.length} bookmarks?`;
     const ok = await confirm(msg, { danger: true });
     if (ok) {
       setBookmarks({});
@@ -47,94 +57,112 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
   };
 
   return (
-    <section className="results" style={{ gridColumn: '1 / -1', padding: '16px 20px 24px' }}>
-      <div className="results-head">
-        <button
-          className="iconbtn"
-          onClick={onBack}
-          data-tip={T('bookmarks_back')}
-          style={{ marginRight: 8 }}
-        >
-          <Icon.back /> {T('bookmarks_back')}
+    <section className="docs-view">
+      <div className="docs-toolbar">
+        <button className="iconbtn" onClick={onBack}>
+          <Icon.back /> <span style={{ fontSize: 11 }}>{T('bookmarks_back')}</span>
         </button>
-        <span className="ct">
-          <strong>{items.length}</strong> {T('bookmarks_count')}
-        </span>
+        <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }}></div>
+        <div className="searchbox" style={{ height: 28, flex: '0 1 260px' }}>
+          <div className="glass"><Icon.search /></div>
+          <input
+            value={filterText}
+            onChange={e => setFilterText(e.target.value)}
+            placeholder={lang === 'zh' ? '篩選收藏…' : 'Filter bookmarks…'}
+            style={{ fontSize: 12 }}
+          />
+        </div>
         <span className="spacer"></span>
-        {items.length > 0 && (
-          <button className="iconbtn" onClick={clearAll} data-tip={T('bookmarks_clear_all')}>
-            <Icon.trash /> {T('bookmarks_clear_all')}
-          </button>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-faint)' }}>
+          {items.length}{allItems.length !== items.length ? ' / ' + allItems.length : ''} {lang === 'zh' ? '筆收藏' : 'bookmarks'}
+        </span>
+        {allItems.length > 0 && (
+          <>
+            <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }}></div>
+            <button className="iconbtn" onClick={clearAll} data-tip={T('bookmarks_clear_all')}>
+              <Icon.trash /> <span style={{ fontSize: 11 }}>{T('bookmarks_clear_all')}</span>
+            </button>
+          </>
         )}
       </div>
 
-      {items.length === 0 ? (
-        <div className="empty">
-          <div>
-            <div className="ico"><Icon.bookmark /></div>
-            <div className="title">{T('bookmarks_empty')}</div>
-            <div className="hint">{T('bookmarks_empty_hint')}</div>
+      <div className="docs-body">
+        {allItems.length === 0 ? (
+          <div className="empty">
+            <div>
+              <div className="ico"><Icon.bookmark /></div>
+              <div className="title">{T('bookmarks_empty')}</div>
+              <div className="hint">{T('bookmarks_empty_hint')}</div>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="result-list">
-          {items.map((b, i) => {
-            const ext = (b.filename || '').split('.').pop().toUpperCase();
-            return (
-              <div key={b.key} className="result">
-                <div className="num">#{String(i + 1).padStart(2, '0')}</div>
-                <div className="body">
-                  <div className="result-row1">
-                    {ext && <span className="tag">{ext}</span>}
-                    <span className="specname">{b.filename || b.doc_id}</span>
-                    <span className="spacer"></span>
-                    {b.score > 0 && (
-                      <span className={'score-pill' + scoreClass(b.score)}>
-                        {b.score.toFixed(4)}
+        ) : items.length === 0 ? (
+          <div className="empty">
+            <div>
+              <div className="ico"><Icon.search /></div>
+              <div className="title">{lang === 'zh' ? '無符合結果' : 'No matches'}</div>
+              <div className="hint">{lang === 'zh' ? '請嘗試不同關鍵字' : 'Try a different filter'}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="result-list" style={{ padding: '12px 20px 24px' }}>
+            {items.map((b, i) => {
+              const ext = (b.filename || '').split('.').pop().toUpperCase();
+              return (
+                <div key={b.key} className="result">
+                  <div className="num">#{String(i + 1).padStart(2, '0')}</div>
+                  <div className="body">
+                    <div className="result-row1">
+                      {ext && <span className="tag">{ext}</span>}
+                      <span className="specname">{b.filename || b.doc_id}</span>
+                      <span className="spacer"></span>
+                      {b.score > 0 && (
+                        <span className={'score-pill' + scoreClass(b.score)}>
+                          {b.score.toFixed(4)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="result-row2">
+                      {b.page > 0 && (
+                        <>
+                          <span className="pg">{T('page_short')} {b.page}</span>
+                          <span className="sep">·</span>
+                        </>
+                      )}
+                      <span className="section" style={{ color: 'var(--fg-muted)' }}>
+                        {b.filepath || b.section}
                       </span>
-                    )}
-                  </div>
-                  <div className="result-row2">
-                    {b.page > 0 && (
-                      <>
-                        <span className="pg">{T('page_short')} {b.page}</span>
-                        <span className="sep">·</span>
-                      </>
-                    )}
-                    <span className="section" style={{ color: 'var(--fg-muted)' }}>
-                      {b.filepath || b.section}
-                    </span>
-                  </div>
-                  {b.snippet && <div className="excerpt">{b.snippet}</div>}
-                  <div className="result-row3" style={{ gap: 8 }}>
-                    <button
-                      className="iconbtn"
-                      onClick={() => openItem(b)}
-                      data-tip={b.filepath}
-                    >
-                      <Icon.external /> {T('bookmarks_open')}
-                    </button>
-                    <button className="iconbtn" onClick={() => downloadItem(b)}>
-                      <Icon.download /> {T('download_pdf')}
-                    </button>
-                    <span className="spacer"></span>
-                    <span style={{ fontSize: 11, color: 'var(--fg-faint)', fontFamily: 'var(--font-mono)' }}>
-                      {formatDate(b.savedAt)}
-                    </span>
-                    <button
-                      className="iconbtn"
-                      onClick={() => remove(b.key)}
-                      data-tip={T('bookmarks_remove')}
-                    >
-                      <Icon.trash />
-                    </button>
+                    </div>
+                    {b.snippet && <div className="excerpt">{b.snippet}</div>}
+                    <div className="result-row3" style={{ gap: 8 }}>
+                      <button
+                        className="iconbtn"
+                        onClick={() => openItem(b)}
+                        data-tip={b.filepath}
+                      >
+                        <Icon.external /> {T('bookmarks_open')}
+                      </button>
+                      <button className="iconbtn" onClick={() => downloadItem(b)}>
+                        <Icon.download /> {T('download_pdf')}
+                      </button>
+                      <span className="spacer"></span>
+                      <span style={{ fontSize: 11, color: 'var(--fg-faint)', fontFamily: 'var(--font-mono)' }}>
+                        {formatDate(b.savedAt)}
+                      </span>
+                      <button
+                        className="iconbtn"
+                        onClick={() => remove(b.key)}
+                        data-tip={T('bookmarks_remove')}
+                      >
+                        <Icon.trash />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

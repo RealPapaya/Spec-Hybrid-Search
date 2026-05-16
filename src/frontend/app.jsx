@@ -233,8 +233,8 @@ function App() {
       if (filters.folder && filters.folder.length) {
         const fp = (r.filepath || '').replace(/\\/g, '/');
         const rel = (base && fp.startsWith(base)) ? fp.slice(base.length) : fp;
-        const match = filters.folder.some(prefix => prefix === '' ? true : (rel === prefix || rel.startsWith(prefix + '/')));
-        if (!match) return false;
+        const excluded = filters.folder.some(prefix => prefix === '' ? true : (rel === prefix || rel.startsWith(prefix + '/')));
+        if (excluded) return false;
       }
       if (filters.tags && filters.tags.length) {
         const assigned = tagsData.assignments[r.doc_id] || [];

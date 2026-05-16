@@ -51,11 +51,11 @@ function isUnderSelected(relPath, selected) {
 }
 
 function ExplorerFileNode({ name, relPath, depth, selected, onToggle }) {
-  const on = isUnderSelected(relPath, selected);
+  const excluded = isUnderSelected(relPath, selected);
   const ext = (name.match(/\.([^.]+)$/) || ['',''])[1].toUpperCase();
   return (
     <div className="exf-node" style={{ paddingLeft: depth * 10 }}>
-      <div className={'exf-row exf-row-file' + (on ? ' on' : '')} onClick={() => onToggle(relPath)}>
+      <div className={'exf-row exf-row-file' + (excluded ? ' excluded' : '')} onClick={() => onToggle(relPath)}>
         <span className="exf-caret exf-caret-empty"></span>
         <span className="exf-label">
           <DocumentIcon ext={ext} className="exf-file-ico" />
@@ -73,12 +73,12 @@ function ExplorerFolderNode({ name, relPath, node, depth, selected, onToggle, ex
   }, [expandSignal && expandSignal.version]);
   const childEntries = Object.entries(node.children).sort(([a],[b]) => a.localeCompare(b));
   const files = (node.files || []).slice().sort((a, b) => a.name.localeCompare(b.name));
-  const on = isUnderSelected(relPath, selected);
+  const excluded = isUnderSelected(relPath, selected);
   const count = node.count;
   const hasChildren = childEntries.length > 0 || files.length > 0;
   return (
     <div className="exf-node" style={{ paddingLeft: depth * 10 }}>
-      <div className={'exf-row' + (on ? ' on' : '')}>
+      <div className={'exf-row' + (excluded ? ' excluded' : '')}>
         {hasChildren ? (
           <span className="exf-caret" onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}>
             <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>

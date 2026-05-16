@@ -1,15 +1,8 @@
 // Topbar — brand mark, status indicator, view-mode buttons, language / theme /
 // settings toggles.
 
-function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, setView, bookmarkCount }) {
+function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bookmarkCount }) {
   const T = useT();
-  const ok = !!status?.ok;
-  const dotColor = ok ? 'var(--score-good)' : 'var(--score-low)';
-  const label = ok
-    ? (lang === 'zh'
-        ? `就緒 · ${status.total_documents ?? 0} 文件 · ${status.total_chunks ?? 0} 區塊`
-        : `ready · ${status.total_documents ?? 0} docs · ${status.total_chunks ?? 0} chunks`)
-    : (lang === 'zh' ? '離線' : 'offline');
   const inBookmarks = view === 'bookmarks';
   const inDocuments = view === 'documents';
   return (
@@ -22,9 +15,6 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, status, view, set
         </div>
       </div>
       <div className="spacer"></div>
-      <div className="meta">
-        <span><span className="dot" style={{ background: dotColor }}></span>{label}</span>
-      </div>
       <button
         className="iconbtn"
         onClick={() => setView(inDocuments ? 'search' : 'documents')}
