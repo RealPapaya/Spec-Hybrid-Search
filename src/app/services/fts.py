@@ -178,11 +178,14 @@ def _sanitize_fts_query(tokens: List[str]) -> str:
     return " ".join('"' + t.replace('"', '""') + '"' for t in tokens)
 
 
-def _like_fallback(tokens: List[str], limit: int) -> List[Dict[str, Any]]:
+def _like_fallback(tokens: List[str], limit: Optional[int] = None) -> List[Dict[str, Any]]:
     """Substring scan over chunks.text for queries trigram can't index."""
     where = " AND ".join(["c.text LIKE ?"] * len(tokens))
     params: list = [f"%{t}%" for t in tokens]
-    params.append(limit)
+    limit_sql = ""
+    if limit is not None:
+        limit_sql = "LIMIT  ?"
+        params.append(limit)
     con = _conn()
     try:
         rows = con.execute(
@@ -193,7 +196,7 @@ def _like_fallback(tokens: List[str], limit: int) -> List[Dict[str, Any]]:
             FROM   chunks    c
             JOIN   documents d ON c.doc_id = d.doc_id
             WHERE  {where}
-            LIMIT  ?
+            {limit_sql}
             """,
             params,
         ).fetchall()
@@ -202,7 +205,7 @@ def _like_fallback(tokens: List[str], limit: int) -> List[Dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
-def search_fts(query: str, limit: int = 20) -> List[Dict[str, Any]]:
+def search_fts(query: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
     """
     Full-text search via FTS5 BM25.
     Returns dicts with doc_id, filename, filepath, chunk_text, page, rank.
@@ -219,10 +222,15 @@ def search_fts(query: str, limit: int = 20) -> List[Dict[str, Any]]:
         return _like_fallback(tokens, limit)
 
     safe_query = _sanitize_fts_query(tokens)
+    limit_sql = ""
+    params: list = [safe_query]
+    if limit is not None:
+        limit_sql = "LIMIT  ?"
+        params.append(limit)
     con = _conn()
     try:
         rows = con.execute(
-            """
+            f"""
             SELECT c.doc_id, c.chunk_index, c.text AS chunk_text, c.page,
                    d.filename, d.filepath,
                    rank
@@ -231,9 +239,9 @@ def search_fts(query: str, limit: int = 20) -> List[Dict[str, Any]]:
             JOIN   documents d ON c.doc_id = d.doc_id
             WHERE  chunks_fts MATCH ?
             ORDER  BY rank
-            LIMIT  ?
+            {limit_sql}
             """,
-            (safe_query, limit),
+            params,
         ).fetchall()
     except sqlite3.OperationalError as exc:
         logger.warning("FTS5 query failed for %r (sanitised: %r): %s", query, safe_query, exc)

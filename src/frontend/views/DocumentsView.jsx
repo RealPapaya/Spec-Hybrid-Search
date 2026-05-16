@@ -159,7 +159,12 @@ function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = tr
   return (
     <div className="file-action-panel" onClick={e => e.stopPropagation()}>
       {/* Open button */}
-      <button className="iconbtn" onClick={() => onOpen(doc)} disabled={!canOpen} data-tip={canOpen ? doc.filepath : indexStatusLabel(doc, lang)}>
+      <button
+        className="iconbtn"
+        onClick={() => { if (canOpen && onOpen) onOpen(doc); }}
+        disabled={!canOpen}
+        data-tip={canOpen ? doc.filepath : indexStatusLabel(doc, lang)}
+      >
         <Icon.external /> {T('docs_open')}
       </button>
 
@@ -385,7 +390,14 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     return ds;
   }, [docs, filterText]);
 
-  const openDoc = (doc) => window.open('/api/file/' + encodeURIComponent(doc.doc_id), '_blank', 'noopener');
+  const openDoc = (doc) => {
+    const isPdf = (doc.filepath || '').toLowerCase().endsWith('.pdf');
+    if (isPdf) {
+      window.open('/api/file/' + encodeURIComponent(doc.doc_id), '_blank', 'noopener');
+    } else {
+      fetch('/api/open/' + encodeURIComponent(doc.doc_id), { method: 'POST' });
+    }
+  };
 
   const createTag = React.useCallback((name, color) => {
     const cleanName = name.trim();

@@ -1,7 +1,108 @@
 // PreviewPanel — right-side panel: doc meta + score bars + tabbed body
 // (context / match / metadata / related) + action buttons (open / download / copy).
 
-function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
+function RelatedTab({ result, results = [], onSelect }) {
+  const T = useT();
+  const lang = React.useContext(LangCtx);
+  const [chunks, setChunks] = React.useState(null);
+  const [inlineChunk, setInlineChunk] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!result?.doc_id) return;
+    setChunks(null);
+    setInlineChunk(null);
+    fetch('/api/chunks/' + encodeURIComponent(result.doc_id))
+      .then(r => r.json())
+      .then(d => setChunks(d.chunks || []))
+      .catch(() => setChunks([]));
+  }, [result?.doc_id]);
+
+  if (!result) return null;
+
+  if (chunks === null) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <div style={{ width: 18, height: 18, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
+
+  const currentPage = result.page || 0;
+
+  const handleChunkClick = (chunk) => {
+    // Find a matching result in the results list (same doc + page)
+    const match = results.find(r => r.doc_id === result.doc_id && (r.page || 0) === (chunk.page || 0));
+    if (match && onSelect) {
+      onSelect(match.id);
+      setInlineChunk(null);
+    } else {
+      // No matching result — show inline
+      setInlineChunk(inlineChunk?.chunk_index === chunk.chunk_index ? null : chunk);
+    }
+  };
+
+  return (
+    <div style={{ fontSize: 12.5 }}>
+      <div style={{ marginBottom: 10, color: 'var(--fg-muted)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+        {T('other_chunks')} <strong style={{ color: 'var(--fg)' }}>{result.spec}</strong>
+        <span style={{ marginLeft: 6, color: 'var(--fg-faint)' }}>· {chunks.length} {lang === 'zh' ? '個區塊' : 'chunks'}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {chunks.map(chunk => {
+          const isCurrent = (chunk.page || 0) === currentPage && Math.abs(chunk.chunk_index - (result.context?.chunkIndex ?? -99)) < 2;
+          const inSearch = results.some(r => r.doc_id === result.doc_id && (r.page || 0) === (chunk.page || 0));
+          const isInline = inlineChunk?.chunk_index === chunk.chunk_index;
+          return (
+            <div key={chunk.chunk_index}>
+              <button
+                onClick={() => handleChunkClick(chunk)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '5px 8px',
+                  background: isCurrent ? 'var(--bg-selected)' : isInline ? 'var(--accent-soft)' : 'var(--bg-soft)',
+                  border: '1px solid ' + (isCurrent ? 'var(--border-focus)' : isInline ? 'color-mix(in srgb, var(--accent) 35%, var(--border))' : 'var(--border)'),
+                  borderRadius: 5, cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: 8,
+                  transition: 'background 0.1s, border-color 0.1s',
+                  color: 'var(--fg)',
+                }}
+                onMouseEnter={e => { if (!isCurrent && !isInline) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                onMouseLeave={e => { if (!isCurrent && !isInline) e.currentTarget.style.background = 'var(--bg-soft)'; }}
+              >
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-faint)', flexShrink: 0, minWidth: 40 }}>
+                  {lang === 'zh' ? '第' : 'p.'}{chunk.page || '—'}
+                </span>
+                <span style={{ color: 'var(--fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontSize: 11.5 }}>
+                  {(chunk.text || '').slice(0, 80)}
+                </span>
+                {inSearch && !isCurrent && (
+                  <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--accent)', flexShrink: 0 }}>
+                    {lang === 'zh' ? '命中' : 'hit'}
+                  </span>
+                )}
+                {isCurrent && (
+                  <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--border-focus)', flexShrink: 0 }}>
+                    ★
+                  </span>
+                )}
+              </button>
+              {isInline && (
+                <div style={{
+                  margin: '2px 0 4px', padding: '8px 10px',
+                  background: 'var(--bg)', border: '1px solid color-mix(in srgb, var(--accent) 25%, var(--border))',
+                  borderRadius: 5, fontSize: 12, lineHeight: 1.65, whiteSpace: 'pre-wrap',
+                  color: 'var(--fg)',
+                }}>
+                  {chunk.text}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookmarks = () => {} }) {
   const T = useT();
   const [tab, setTab] = React.useState('context');
   const [flash, setFlash] = React.useState('');
@@ -137,8 +238,8 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
       <div className="preview-tabs">
         <button className={tab === 'context'  ? 'active' : ''} onClick={() => setTab('context')} >{T('tab_context')}</button>
         <button className={tab === 'match'    ? 'active' : ''} onClick={() => setTab('match')}   >{T('tab_match')}</button>
-        <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>{T('tab_metadata')} <span className="ctsmall">12</span></button>
-        <button className={tab === 'related'  ? 'active' : ''} onClick={() => setTab('related')} >{T('tab_related')}  <span className="ctsmall">7</span></button>
+        <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>{T('tab_metadata')}</button>
+        <button className={tab === 'related'  ? 'active' : ''} onClick={() => setTab('related')} >{T('tab_related')}</button>
       </div>
 
       <div className="preview-body preview-text">
@@ -164,15 +265,7 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
           <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{metaJson}</pre>
         )}
         {tab === 'related' && (
-          <div style={{ fontSize: 12.5, fontFamily: 'var(--font-sans)', color: 'var(--fg-muted)' }}>
-            <p>{T('other_chunks')} <strong style={{ color: 'var(--fg)' }}>{result.spec}</strong></p>
-            <ul style={{ paddingLeft: 18, lineHeight: 1.9 }}>
-              <li>§ 4.3.6 — Pre-Boot Communication Channel · {T('page_short')} {result.page - 1}</li>
-              <li>§ 4.3.8 — MKHI Command Set Negotiation · {T('page_short')} {result.page + 2}</li>
-              <li>§ 4.4.1 — HECI Reset and Recovery · {T('page_short')} {result.page + 5}</li>
-              <li>§ 5.1 — Provisioning Flow Overview · {T('page_short')} {result.page + 18}</li>
-            </ul>
-          </div>
+          <RelatedTab result={result} results={results} onSelect={onSelect} />
         )}
       </div>
 

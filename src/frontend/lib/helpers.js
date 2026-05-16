@@ -6,7 +6,7 @@ function highlightText(text, terms) {
   if (!terms || !terms.length) return text;
   const sorted = [...terms].sort((a, b) => b.length - a.length);
   const escaped = sorted.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const pattern = new RegExp('(' + escaped.join('|') + ')', 'gi');
+  const pattern = new RegExp('(' + escaped.join('|') + ')', 'i');
   const parts = text.split(pattern);
   return parts.map((p, i) =>
     pattern.test(p) ? <mark key={i}>{p}</mark> : <React.Fragment key={i}>{p}</React.Fragment>

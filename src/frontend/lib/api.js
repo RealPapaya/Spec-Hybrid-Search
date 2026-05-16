@@ -4,7 +4,7 @@
 function mapResult(r, query, index) {
   const nameNoExt = r.filename.replace(/\.[^.]+$/, '');
   const ext = (r.filename.match(/\.([^.]+)$/) || ['', ''])[1].toUpperCase();
-  const highlights = query.trim().split(/\s+/).filter(w => w.length > 2);
+  const highlights = query.trim().split(/\s+/).filter(Boolean);
   return {
     id:            [r.doc_id, r.page || 0, index].join(':'),
     doc_id:        r.doc_id,

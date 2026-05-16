@@ -5,18 +5,18 @@ Query params
 ------------
 q       : search query (required)
 mode    : "hybrid" | "vector" | "keyword"  (default: hybrid)
-limit   : 1-50  (default: 10)
+limit   : optional result cap; omitted returns every exact term match
 """
 from __future__ import annotations
 import logging
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.models import SearchResponse, SearchResult
-from app.config import DEFAULT_SEARCH_LIMIT, RRF_K
+from app.config import RRF_K
 from app.services.embedder import embed_query
-from app.services.qdrant_store import search_vector
+from app.services.qdrant_store import search_vector, collection_point_count
 from app.services.fts import search_fts
 
 router = APIRouter()
@@ -29,7 +29,7 @@ def _rrf_fuse(
     vector_hits: List[dict],
     fts_hits:    List[dict],
     k: int = RRF_K,
-    limit: int = DEFAULT_SEARCH_LIMIT,
+    limit: Optional[int] = None,
 ) -> List[dict]:
     """
     Combine two ranked lists with RRF.
@@ -64,7 +64,7 @@ def _rrf_fuse(
             scores[key]["bm25_score"] = bm25_norm
 
     merged = sorted(scores.values(), key=lambda x: x["rrf"], reverse=True)
-    top = merged[:limit]
+    top = merged if limit is None else merged[:limit]
 
     # Normalise fused score: top result = 1.0
     max_rrf = top[0]["rrf"] if top else 1.0
@@ -74,31 +74,50 @@ def _rrf_fuse(
     return top
 
 
+def _query_terms(query: str) -> List[str]:
+    return [t for t in query.split() if t]
+
+
+def _keep_all_terms(hits: List[dict], terms: List[str]) -> List[dict]:
+    """Only keep chunks whose visible text contains every query term."""
+    folded_terms = [t.casefold() for t in terms]
+    kept = []
+    for hit in hits:
+        text = hit.get("chunk_text", "").casefold()
+        if all(term in text for term in folded_terms):
+            kept.append(hit)
+    return kept
+
+
 # ── Route ─────────────────────────────────────────────────────────────────────
 
 @router.get("/search", response_model=SearchResponse)
 async def search(
     q:     str = Query(..., min_length=1, description="Search query"),
     mode:  str = Query("hybrid", description="hybrid | vector | keyword"),
-    limit: int = Query(DEFAULT_SEARCH_LIMIT, ge=1, le=50),
+    limit: Optional[int] = Query(None, ge=1),
 ):
     mode = mode.lower()
     if mode not in {"hybrid", "vector", "keyword"}:
         raise HTTPException(status_code=400, detail="mode must be hybrid, vector, or keyword")
 
-    logger.info("Search: q=%r mode=%s limit=%d", q, mode, limit)
+    logger.info("Search: q=%r mode=%s limit=%s", q, mode, limit if limit is not None else "all")
 
     results: List[dict] = []
 
     try:
+        terms = _query_terms(q)
+        vector_limit = limit * 2 if limit is not None else collection_point_count()
+
         if mode in {"hybrid", "vector"}:
-            vec = embed_query(q)
-            vector_hits = search_vector(vec, limit=limit * 2)
+            vector_hits = search_vector(embed_query(q), limit=vector_limit) if vector_limit else []
+            vector_hits = _keep_all_terms(vector_hits, terms)
         else:
             vector_hits = []
 
         if mode in {"hybrid", "keyword"}:
-            fts_hits = search_fts(q, limit=limit * 2)
+            fts_limit = limit * 2 if limit is not None else None
+            fts_hits = _keep_all_terms(search_fts(q, limit=fts_limit), terms)
         else:
             fts_hits = []
 
@@ -110,9 +129,10 @@ async def search(
             results = raw
 
         elif mode == "vector":
-            for r in vector_hits[:limit]:
+            vector_results = vector_hits if limit is None else vector_hits[:limit]
+            for r in vector_results:
                 r["mode"] = "vector"
-            results = vector_hits[:limit]
+            results = vector_results
 
         else:  # keyword
             # FTS5 rank is negative BM25; most-negative = best.
@@ -127,7 +147,7 @@ async def search(
                     r["score"]      = bm25
                     r["bm25_score"] = bm25
                     r["mode"]       = "keyword"
-            results = fts_hits[:limit]
+            results = fts_hits if limit is None else fts_hits[:limit]
 
     except Exception as exc:
         logger.exception("Search error: %s", exc)

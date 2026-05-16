@@ -58,7 +58,6 @@ API_HOST = "0.0.0.0"
 API_PORT = 8000
 
 # ── Search ────────────────────────────────────────────────────────────────────
-DEFAULT_SEARCH_LIMIT = 10
 RRF_K = 60   # Reciprocal Rank Fusion constant
 
 # ── Qdrant binary (auto-downloaded by start.py) ───────────────────────────────

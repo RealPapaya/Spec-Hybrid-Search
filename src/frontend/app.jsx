@@ -207,8 +207,7 @@ function App() {
       const modeParam = mode === 'bm25' ? 'keyword' : mode;
       const res = await fetch(
         '/api/search?q=' + encodeURIComponent(query) +
-        '&mode=' + modeParam +
-        '&limit=20'
+        '&mode=' + modeParam
       );
       if (!res.ok) throw new Error('Server error ' + res.status);
       const data = await res.json();
@@ -333,7 +332,7 @@ function App() {
               <div className="resizer" onMouseDown={onPreviewResizerMouseDown}>
                 <div ref={previewPillRef} className="resizer-pill" />
               </div>
-              <PreviewPanel result={selected} bookmarks={bookmarks} setBookmarks={setBookmarks} />
+              <PreviewPanel result={selected} results={filtered} onSelect={setSelectedId} bookmarks={bookmarks} setBookmarks={setBookmarks} />
             </>
           )}
         </div>

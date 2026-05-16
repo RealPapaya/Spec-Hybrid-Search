@@ -236,10 +236,10 @@ var DICT = {
     download_pdf: "下載文件",
     page_short: "第",
 
-    docs_nav:        "Tag manager",
+    docs_nav:        "標籤管理",
     docs_back:       "返回搜尋",
-    docs_list:       "View as list",
-    docs_explorer:   "View as tree",
+    docs_list:       "清單檢視",
+    docs_explorer:   "樹狀檢視",
     docs_empty:      "尚未索引任何文件",
     docs_empty_hint: "將 PDF、DOCX、XLSX 或 PPTX 拖入監看資料夾,系統會自動開始索引。",
     docs_search:     "過濾檔案...",

@@ -148,6 +148,26 @@ async def serve_file(doc_id: str, download: int = Query(0)):
     )
 
 
+@router.get("/chunks/{doc_id}")
+async def get_chunks(doc_id: str):
+    """Return all text chunks for a document, ordered by chunk_index."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        rows = con.execute(
+            "SELECT chunk_index, page, text FROM chunks WHERE doc_id = ? ORDER BY chunk_index",
+            (doc_id,),
+        ).fetchall()
+    finally:
+        con.close()
+    return {
+        "doc_id": doc_id,
+        "chunks": [
+            {"chunk_index": r[0], "page": r[1], "text": r[2]}
+            for r in rows
+        ],
+    }
+
+
 @router.post("/open/{doc_id}")
 async def open_file_native(doc_id: str):
     """Open a non-PDF file with the OS default application via os.startfile()."""
