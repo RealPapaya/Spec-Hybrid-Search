@@ -25,14 +25,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from app.config import FRONTEND_DIR, WATCHED_DOCS_DIR
+from app.config import FRONTEND_DIR
 from app.routes import search as search_router
 from app.routes import index  as index_router
 from app.routes import settings as settings_router
 from app.services.fts import init_db
 from app.services.qdrant_store import ensure_collection
+from app.watch_runtime import start_current_watcher, stop_current_watcher
+from app.watch_settings import get_watched_docs_dir
 from indexer.pipeline import index_all
-from indexer.watcher import start_watcher, stop_worker
+from indexer.watcher import stop_worker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,7 +43,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-_observer = None   # watchdog Observer — kept alive for app lifetime
 _bg_tasks: set[asyncio.Task] = set()
 
 
@@ -69,8 +70,6 @@ def _prewarm_embedder() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _observer
-
     # ── Startup (fast path only) ─────────────────────────────────────────────
     logger.info("Initialising database …")
     init_db()
@@ -78,10 +77,10 @@ async def lifespan(app: FastAPI):
     logger.info("Connecting to Qdrant …")
     ensure_collection()
 
-    WATCHED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    get_watched_docs_dir().mkdir(parents=True, exist_ok=True)
 
     logger.info("Starting file watcher …")
-    _observer = start_watcher()
+    start_current_watcher()
 
     # Schedule heavy work in background so server is ready immediately.
     loop = asyncio.get_running_loop()
@@ -94,12 +93,7 @@ async def lifespan(app: FastAPI):
     yield   # app is running
 
     # ── Shutdown ─────────────────────────────────────────────────────────────
-    if _observer:
-        try:
-            _observer.stop()
-            _observer.join(timeout=3)
-        except Exception:
-            logger.exception("Error stopping watcher")
+    stop_current_watcher()
     try:
         stop_worker()
     except Exception:

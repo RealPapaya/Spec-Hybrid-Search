@@ -32,7 +32,7 @@ from watchdog.events import (
     FileDeletedEvent,
 )
 
-from app.config import WATCHED_DOCS_DIR
+from app.watch_settings import get_watched_docs_dir
 from indexer.extractor import SUPPORTED_EXTENSIONS
 from indexer.pipeline import index_file
 from app.services.fts import delete_document
@@ -52,6 +52,14 @@ _READY_TIMEOUT = 10.0
 
 def _doc_id_from_path(filepath: str) -> str:
     return hashlib.sha256(filepath.encode()).hexdigest()[:16]
+
+
+def _is_in_current_watch_dir(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(get_watched_docs_dir())
+        return True
+    except ValueError:
+        return False
 
 
 # ── Background worker ─────────────────────────────────────────────────────────
@@ -115,6 +123,9 @@ class _IndexWorker:
             try:
                 p = Path(path)
                 if not p.exists():
+                    continue
+                if not _is_in_current_watch_dir(p):
+                    logger.debug("Skipping event outside current watched folder: %s", path)
                     continue
                 if not _wait_for_file_ready(path):
                     logger.warning("File not ready, skipping: %s", path)
@@ -197,7 +208,7 @@ class _DocEventHandler(FileSystemEventHandler):
 def start_watcher(directory: Path | None = None) -> Observer:
     """Start the watchdog observer + the indexing worker thread."""
     global _worker
-    watch_dir = Path(directory or WATCHED_DOCS_DIR)
+    watch_dir = Path(directory or get_watched_docs_dir())
     watch_dir.mkdir(parents=True, exist_ok=True)
 
     if _worker is None:

@@ -46,10 +46,10 @@ from app.config import (
     QDRANT_PORT,
     API_HOST,
     API_PORT,
-    WATCHED_DOCS_DIR,
     LOG_DIR,
     SNAPSHOTS_DIR,
 )
+from app.watch_settings import get_watched_docs_dir
 
 logging.basicConfig(
     level=logging.INFO,
@@ -246,7 +246,7 @@ def main() -> None:
     _migrate_legacy_dirs()
 
     # 2. Ensure required dirs exist
-    WATCHED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    get_watched_docs_dir().mkdir(parents=True, exist_ok=True)
 
     # 3. Download Qdrant binary if needed
     ensure_qdrant_binary()

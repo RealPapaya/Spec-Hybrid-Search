@@ -11,7 +11,7 @@ import threading
 from pathlib import Path
 from typing import Tuple
 
-from app.config import WATCHED_DOCS_DIR
+from app.watch_settings import get_watched_docs_dir
 from indexer.extractor import extract, SUPPORTED_EXTENSIONS
 from app.services.embedder import embed
 from app.services import qdrant_store as qs
@@ -146,7 +146,7 @@ def index_all(directory: Path | None = None) -> Tuple[int, int]:
 
     Returns (files_indexed, files_skipped).
     """
-    directory = Path(directory or WATCHED_DOCS_DIR)
+    directory = Path(directory or get_watched_docs_dir())
     mtime_cache = get_all_documents_mtimes()
 
     indexed = skipped = 0

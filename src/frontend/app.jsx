@@ -142,23 +142,25 @@ function App() {
     return () => { alive = false; };
   }, []);
 
+  const refreshStatus = React.useCallback(async () => {
+    try {
+      const r = await fetch('/api/status');
+      if (!r.ok) throw new Error('status ' + r.status);
+      const d = await r.json();
+      setStatus({ ok: true, ...d });
+      return d;
+    } catch(e) {
+      setStatus(s => ({ ...s, ok: false }));
+      return null;
+    }
+  }, []);
+
   // Poll backend status so the topbar dot reflects reality.
   React.useEffect(() => {
-    let alive = true;
-    const fetchStatus = async () => {
-      try {
-        const r = await fetch('/api/status');
-        if (!r.ok) throw new Error('status ' + r.status);
-        const d = await r.json();
-        if (alive) setStatus({ ok: true, ...d });
-      } catch(e) {
-        if (alive) setStatus(s => ({ ...s, ok: false }));
-      }
-    };
-    fetchStatus();
-    const id = setInterval(fetchStatus, 10000);
-    return () => { alive = false; clearInterval(id); };
-  }, []);
+    refreshStatus();
+    const id = setInterval(refreshStatus, 10000);
+    return () => clearInterval(id);
+  }, [refreshStatus]);
 
         const [tweaks, setTweakState] = React.useState({
     layout:      saved.layout      || 'sidebar',
@@ -359,6 +361,7 @@ function App() {
               tagsData={tagsData}
               setTagsData={setTagsData}
               watchedDir={watchedDir}
+              onWatchDirChanged={refreshStatus}
             />
           ) : inBookmarks ? (
             <BookmarksView

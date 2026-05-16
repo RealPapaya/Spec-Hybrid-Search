@@ -16,6 +16,7 @@ _DEFAULT_SETTINGS: dict[str, Any] = {
     "prefs": {},
     "tags": {"customTags": [], "assignments": {}},
     "bookmarks": {},
+    "watch": {},
 }
 
 
@@ -29,6 +30,7 @@ def _merged_defaults(data: dict[str, Any] | None = None) -> dict[str, Any]:
             "assignments": tags.get("assignments") if isinstance(tags.get("assignments"), dict) else {},
         },
         "bookmarks": data.get("bookmarks") if isinstance(data.get("bookmarks"), dict) else {},
+        "watch": data.get("watch") if isinstance(data.get("watch"), dict) else {},
     }
 
 
@@ -66,7 +68,7 @@ async def save_local_settings(request: Request):
 
     current = _read_settings()
     next_settings = {**current}
-    for key in ("prefs", "tags", "bookmarks"):
+    for key in ("prefs", "tags", "bookmarks", "watch"):
         if key in payload:
             next_settings[key] = payload[key]
 

@@ -6,13 +6,13 @@
 //   const ok = await confirm('Delete this tag?', { danger: true });
 //   if (!ok) return;
 //
-// opts: { title, confirmLabel, cancelLabel, danger }
+// opts: { title, confirmLabel, cancelLabel, danger, actions }
 
 var ConfirmCtx = React.createContext(null);
 
 function ConfirmDialogProvider({ children }) {
   const [state, setState] = React.useState(null);
-  // state = { message, title, confirmLabel, cancelLabel, danger, resolve }
+  // state = { message, title, confirmLabel, cancelLabel, danger, actions, resolve }
 
   const confirm = React.useCallback((message, opts = {}) => {
     return new Promise(resolve => {
@@ -35,8 +35,10 @@ function ConfirmDialogProvider({ children }) {
           confirmLabel={state.confirmLabel}
           cancelLabel={state.cancelLabel}
           danger={state.danger}
+          actions={state.actions}
           onConfirm={() => handleClose(true)}
           onCancel={() => handleClose(false)}
+          onAction={handleClose}
         />
       )}
     </ConfirmCtx.Provider>
@@ -49,7 +51,7 @@ function useConfirm() {
   return ctx;
 }
 
-function ConfirmDialogModal({ title, message, confirmLabel, cancelLabel, danger, onConfirm, onCancel }) {
+function ConfirmDialogModal({ title, message, confirmLabel, cancelLabel, danger, actions, onConfirm, onCancel, onAction }) {
   const T = useT();
 
   // Close on Escape key
@@ -64,18 +66,36 @@ function ConfirmDialogModal({ title, message, confirmLabel, cancelLabel, danger,
       <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
         {title && <div className="confirm-title">{title}</div>}
         <div className="confirm-message">{message}</div>
-        <div className="confirm-actions">
-          <button className="confirm-btn confirm-btn-cancel" onClick={onCancel}>
-            {cancelLabel || T('confirm_cancel')}
-          </button>
-          <button
-            className={'confirm-btn' + (danger ? ' confirm-btn-danger' : ' confirm-btn-ok')}
-            onClick={onConfirm}
-            autoFocus
-          >
-            {confirmLabel || (danger ? T('confirm_danger') : T('confirm_ok'))}
-          </button>
-        </div>
+        {Array.isArray(actions) && actions.length ? (
+          <div className="confirm-actions">
+            {actions.map((action, idx) => (
+              <button
+                key={idx}
+                className={
+                  'confirm-btn ' +
+                  (action.danger ? 'confirm-btn-danger' : action.cancel ? 'confirm-btn-cancel' : 'confirm-btn-ok')
+                }
+                onClick={() => onAction(action.value)}
+                autoFocus={idx === 0}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="confirm-actions">
+            <button className="confirm-btn confirm-btn-cancel" onClick={onCancel}>
+              {cancelLabel || T('confirm_cancel')}
+            </button>
+            <button
+              className={'confirm-btn' + (danger ? ' confirm-btn-danger' : ' confirm-btn-ok')}
+              onClick={onConfirm}
+              autoFocus
+            >
+              {confirmLabel || (danger ? T('confirm_danger') : T('confirm_ok'))}
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body

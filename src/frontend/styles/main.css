@@ -1484,6 +1484,21 @@ body {
   height: 46px;
 }
 .docs-toolbar .spacer { flex: 1; }
+.watch-folder-path,
+.watch-folder-message {
+  min-width: 0;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fg-faint);
+}
+.watch-folder-message {
+  max-width: 220px;
+  color: var(--accent);
+}
 .docs-view-toggle {
   display: inline-flex;
   border: 1px solid var(--border);
@@ -2070,6 +2085,8 @@ span.doc-tree-icon {
   color: var(--fg-muted);
   line-height: 1.55;
   margin-bottom: 20px;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 .confirm-actions {
   display: flex;

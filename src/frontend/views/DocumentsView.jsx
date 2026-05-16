@@ -331,13 +331,15 @@ function DocCard({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
   );
 }
 
-function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
+function DocumentsView({ onBack, tagsData, setTagsData, watchedDir, onWatchDirChanged }) {
   const T = useT();
   const lang = React.useContext(LangCtx);
   const confirm = useConfirm();
   const [docs, setDocs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [choosingFolder, setChoosingFolder] = React.useState(false);
+  const [watchFolderMessage, setWatchFolderMessage] = React.useState('');
   const [viewMode, setViewMode] = React.useState('explorer');
   const [tagMode, setTagMode] = React.useState('manual');
   const [tagApplyMessage, setTagApplyMessage] = React.useState('');
@@ -383,6 +385,44 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
       setRefreshing(false);
     }
   }, [refreshing, fetchDocs]);
+
+  const handleChooseFolder = React.useCallback(async () => {
+    if (choosingFolder) return;
+    setChoosingFolder(true);
+    setWatchFolderMessage('');
+    try {
+      const pickRes = await fetch('/api/watch-folder/pick', { method: 'POST' });
+      const pickData = await pickRes.json().catch(() => ({}));
+      if (!pickRes.ok) throw new Error(pickData.detail || T('docs_watch_pick_failed'));
+      if (pickData.cancelled || !pickData.path) return;
+
+      const choice = await confirm(T('docs_watch_folder_confirm', { path: pickData.path }), {
+        title: T('docs_watch_folder_title'),
+        actions: [
+          { label: T('docs_watch_keep'), value: 'keep' },
+          { label: T('docs_watch_clear'), value: 'clear', danger: true },
+          { label: T('confirm_cancel'), value: null, cancel: true },
+        ],
+      });
+      if (!choice) return;
+
+      const applyRes = await fetch('/api/watch-folder/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: pickData.path, clear_existing: choice === 'clear' }),
+      });
+      const applyData = await applyRes.json().catch(() => ({}));
+      if (!applyRes.ok) throw new Error(applyData.detail || T('docs_watch_apply_failed'));
+
+      if (onWatchDirChanged) await onWatchDirChanged();
+      await fetchDocs();
+      setWatchFolderMessage(T('docs_watch_folder_changed'));
+    } catch(e) {
+      setWatchFolderMessage(e.message || T('docs_watch_apply_failed'));
+    } finally {
+      setChoosingFolder(false);
+    }
+  }, [choosingFolder, confirm, T, fetchDocs, onWatchDirChanged]);
 
   const filtered = React.useMemo(() => {
     let ds = docs;
@@ -523,6 +563,26 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
           <input value={filterText} onChange={e => setFilterText(e.target.value)} placeholder={T('docs_search')} style={{ fontSize: 12 }} />
         </div>
         <span className="spacer"></span>
+        {watchedDir && (
+          <span className="watch-folder-path" title={watchedDir}>
+            {watchedDir}
+          </span>
+        )}
+        {watchFolderMessage && (
+          <span className="watch-folder-message" title={watchFolderMessage}>
+            {watchFolderMessage}
+          </span>
+        )}
+        <button
+          className="iconbtn"
+          onClick={handleChooseFolder}
+          disabled={choosingFolder}
+          data-tip={T('docs_choose_folder')}
+          style={choosingFolder ? { opacity: 0.6 } : null}
+        >
+          <Icon.folder />
+          <span style={{ fontSize: 11 }}>{T('docs_choose_folder')}</span>
+        </button>
         <button
           className="iconbtn"
           onClick={handleRefresh}
