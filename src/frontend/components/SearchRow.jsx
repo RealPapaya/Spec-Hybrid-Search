@@ -1,6 +1,7 @@
 // SearchRow - advanced search controls panel (shown when toggled from Topbar).
 
 function SearchRow({
+  open = true,
   mode, setMode,
   view = 'documents', setView = () => {},
   wholeWord = false, setWholeWord = () => {},
@@ -26,9 +27,9 @@ function SearchRow({
   }, [setRelatedTerms]);
 
   return (
-    <div className="searchrow">
+    <div className={'searchrow' + (open ? ' open' : ' closed')} aria-hidden={!open} inert={open ? undefined : ''}>
       <div className="advanced-panel">
-        <div className="mode view-toggle" role="tablist" data-tip={T('view_tip')}>
+        <div className={'mode segmented view-toggle view-' + view} role="tablist" data-tip={T('view_tip')}>
           <button
             className={view === 'documents' ? 'active' : ''}
             onClick={() => setView('documents')}
@@ -44,7 +45,7 @@ function SearchRow({
         </div>
 
         {!isOccurrences && (
-          <div className="mode" role="tablist">
+          <div className={'mode segmented search-mode search-mode-' + mode} role="tablist">
             {[
               { id: 'bm25',     label: T('mode_keyword'),  sub: 'BM25'       },
               { id: 'hybrid',   label: T('mode_hybrid'),   sub: 'BM25 + vec' },
@@ -64,23 +65,27 @@ function SearchRow({
           </div>
         )}
 
-        <label className="search-option" data-tip={T('whole_word_tip')}>
-          <input
-            type="checkbox"
-            checked={wholeWord}
-            onChange={(e) => setWholeWord(e.target.checked)}
-          />
-          <span>{T('whole_word')}</span>
-        </label>
+        <button
+          type="button"
+          className={'option-btn' + (wholeWord ? ' active' : '')}
+          onClick={() => setWholeWord(!wholeWord)}
+          data-tip={T('whole_word_tip')}
+          aria-pressed={wholeWord}
+          aria-label={T('whole_word')}
+        >
+          <Icon.wholeWord />
+        </button>
 
-        <label className="search-option" data-tip={T('match_case_tip')}>
-          <input
-            type="checkbox"
-            checked={matchCase}
-            onChange={(e) => setMatchCase(e.target.checked)}
-          />
-          <span>{T('match_case')}</span>
-        </label>
+        <button
+          type="button"
+          className={'option-btn' + (matchCase ? ' active' : '')}
+          onClick={() => setMatchCase(!matchCase)}
+          data-tip={T('match_case_tip')}
+          aria-pressed={matchCase}
+          aria-label={T('match_case')}
+        >
+          <Icon.matchCase />
+        </button>
 
         <div className="related-control">
           <span className="related-label">{T('related_terms')}</span>

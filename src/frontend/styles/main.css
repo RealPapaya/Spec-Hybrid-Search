@@ -283,9 +283,29 @@ body {
   flex-direction: column;
   gap: 10px;
   align-items: stretch;
+  max-height: 180px;
   padding: 10px 16px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    max-height 0.28s cubic-bezier(.2,.8,.2,1),
+    padding-top 0.28s cubic-bezier(.2,.8,.2,1),
+    padding-bottom 0.28s cubic-bezier(.2,.8,.2,1),
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(.2,.8,.2,1),
+    border-color 0.2s ease;
+}
+.searchrow.closed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
 }
 
 .searchbox {
@@ -339,6 +359,7 @@ body {
 
 /* Mode selector segmented */
 .mode {
+  position: relative;
   display: inline-flex;
   border: 1px solid var(--border-strong);
   border-radius: 6px;
@@ -346,7 +367,44 @@ body {
   padding: 2px;
   height: 36px;
 }
+.mode.segmented {
+  --count: 3;
+  --active-index: 0;
+  overflow: hidden;
+}
+.mode.segmented::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: calc(2px + ((100% - 4px) / var(--count)) * var(--active-index));
+  width: calc((100% - 4px) / var(--count));
+  border-radius: 4px;
+  background: var(--bg-elev);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 0 0 1px var(--border);
+  transition: left 0.24s cubic-bezier(.2,.8,.2,1), width 0.24s cubic-bezier(.2,.8,.2,1);
+}
+[data-theme="dark"] .mode.segmented::before {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 0 0 1px var(--border-strong);
+}
+.mode.view-toggle {
+  --count: 2;
+}
+.mode.view-documents,
+.mode.search-mode-bm25 {
+  --active-index: 0;
+}
+.mode.view-occurrences,
+.mode.search-mode-hybrid {
+  --active-index: 1;
+}
+.mode.search-mode-semantic {
+  --active-index: 2;
+}
 .mode button {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
   border: none;
   background: transparent;
   font: inherit;
@@ -362,11 +420,8 @@ body {
 }
 .mode button:hover { color: var(--fg); }
 .mode button.active {
-  background: var(--bg-elev);
   color: var(--fg);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 0 0 1px var(--border);
 }
-[data-theme="dark"] .mode button.active { box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 0 0 1px var(--border-strong); }
 .mode button .mdot {
   width: 5px; height: 5px; border-radius: 50%;
   background: var(--fg-faint);
@@ -391,6 +446,8 @@ body {
 .searchbtn:hover { filter: brightness(1.05); }
 
 .advanced-btn {
+  position: relative;
+  overflow: hidden;
   height: 36px;
   padding: 0 12px;
   border: 1px solid var(--border-strong);
@@ -400,6 +457,22 @@ body {
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.advanced-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateX(-105%);
+  transition: transform 0.26s cubic-bezier(.2,.8,.2,1);
+}
+.advanced-btn span {
+  position: relative;
+  z-index: 1;
+}
+.advanced-btn.active::before {
+  transform: translateX(0);
 }
 .advanced-btn:hover,
 .advanced-btn.active {
@@ -425,6 +498,33 @@ body {
   cursor: pointer;
 }
 .search-option input { cursor: pointer; }
+.option-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--fg-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+.option-btn:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+  border-color: var(--accent);
+}
+.option-btn.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.option-btn svg {
+  width: 18px;
+  height: 18px;
+}
 .related-control {
   display: flex;
   align-items: center;

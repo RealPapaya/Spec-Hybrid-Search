@@ -341,8 +341,9 @@ function App() {
           onSearch={onSearch}
           advancedOpen={advancedOpen} setAdvancedOpen={setAdvancedOpen}
         />
-        {inSearch && advancedOpen && (
+        {inSearch && (
           <SearchRow
+            open={advancedOpen}
             mode={mode} setMode={setMode}
             view={searchView} setView={setSearchView}
             wholeWord={wholeWord} setWholeWord={setWholeWord}

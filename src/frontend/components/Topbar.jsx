@@ -35,7 +35,7 @@ function Topbar({
             onClick={() => setAdvancedOpen(open => !open)}
             type="button"
           >
-            {T('advanced')}
+            <span>{T('advanced')}</span>
           </button>
           <button className="searchbtn" onClick={onSearch}>
             <Icon.search /> {T('btn_search')}
