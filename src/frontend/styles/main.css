@@ -390,6 +390,9 @@ body {
 .mode.view-toggle {
   --count: 2;
 }
+.mode.view-toggle button {
+  min-width: 124px;
+}
 .mode.view-documents,
 .mode.search-mode-bm25 {
   --active-index: 0;
@@ -417,6 +420,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .mode button:hover { color: var(--fg); }
 .mode button.active {

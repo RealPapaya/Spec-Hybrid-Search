@@ -55,7 +55,6 @@ function SearchRow({
                 ? <button key={m.id} className="" disabled data-tip={T('coming_soon')} style={{ opacity: 0.4, cursor: 'not-allowed', position: 'relative' }}>
                     <span className="mdot"></span>
                     {m.label}
-                    <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.8 }}>{T('coming_soon_short')}</span>
                   </button>
                 : <button key={m.id} className={mode === m.id ? 'active' : ''} onClick={() => setMode(m.id)} data-tip={m.sub}>
                     <span className="mdot"></span>

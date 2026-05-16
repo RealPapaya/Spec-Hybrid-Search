@@ -80,7 +80,7 @@ var DICT = {
     download_pdf: "Download document",
     page_short: "p.",
 
-    docs_nav: "My Library",
+    docs_nav: "Library",
     docs_back: "Back to search",
     docs_list: "View as list",
     docs_explorer: "View as tree",
@@ -260,7 +260,7 @@ var DICT = {
     download_pdf: "下載文件",
     page_short: "頁",
 
-    docs_nav: "我的文庫",
+    docs_nav: "知識庫",
     docs_back: "返回搜尋",
     docs_list: "清單檢視",
     docs_explorer: "樹狀檢視",
