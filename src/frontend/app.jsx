@@ -11,6 +11,8 @@ function App() {
   const [mode,     setMode]     = React.useState('hybrid');
   const [searchView, setSearchView] = React.useState('documents');
   const [wholeWord, setWholeWord] = React.useState(false);
+  const [matchCase, setMatchCase] = React.useState(false);
+  const [relatedTerms, setRelatedTerms] = React.useState([]);
   const [filters,  setFilters]  = React.useState({ vendor: [], type: [], category: [], tags: [], folder: [] });
   const [selectedId, setSelectedId] = React.useState(null);
   const [sortKey,  setSortKey]  = React.useState('score');
@@ -209,11 +211,15 @@ function App() {
     const params = new URLSearchParams();
     params.set('q', q);
     params.set('view', opts.view);
+    params.set('whole_word', opts.wholeWord ? 'true' : 'false');
+    params.set('match_case', opts.matchCase ? 'true' : 'false');
+    (opts.relatedTerms || []).forEach(term => {
+      if (term.trim()) params.append('related_terms', term.trim());
+    });
     if (opts.view === 'documents') {
       params.set('mode', opts.mode === 'bm25' ? 'keyword' : opts.mode);
     } else {
       params.set('mode', 'keyword');
-      params.set('whole_word', opts.wholeWord ? 'true' : 'false');
       params.set('limit', String(opts.limit ?? 200));
       params.set('offset', String(opts.offset ?? 0));
     }
@@ -226,7 +232,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const url = buildSearchUrl(query, { view: searchView, mode, wholeWord, offset: 0 });
+      const url = buildSearchUrl(query, { view: searchView, mode, wholeWord, matchCase, relatedTerms, offset: 0 });
       const res = await fetch(url);
       if (!res.ok) throw new Error('Server error ' + res.status);
       const data = await res.json();
@@ -250,7 +256,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [query, mode, searchView, wholeWord, buildSearchUrl]);
+  }, [query, mode, searchView, wholeWord, matchCase, relatedTerms, buildSearchUrl]);
 
   const onLoadMore = React.useCallback(async () => {
     if (loadingMore || searchView !== 'occurrences') return;
@@ -259,7 +265,7 @@ function App() {
     try {
       const nextOffset = results.length;
       const url = buildSearchUrl(query, {
-        view: searchView, mode, wholeWord, offset: nextOffset, limit: summary.limit,
+        view: searchView, mode, wholeWord, matchCase, relatedTerms, offset: nextOffset, limit: summary.limit,
       });
       const res = await fetch(url);
       if (!res.ok) throw new Error('Server error ' + res.status);
@@ -272,7 +278,7 @@ function App() {
     } finally {
       setLoadingMore(false);
     }
-  }, [query, mode, searchView, wholeWord, loadingMore, summary, results.length, buildSearchUrl]);
+  }, [query, mode, searchView, wholeWord, matchCase, relatedTerms, loadingMore, summary, results.length, buildSearchUrl]);
 
   const watchedDir = status.watched_docs_dir || '';
   const filtered = React.useMemo(() => {
@@ -339,6 +345,8 @@ function App() {
             mode={mode} setMode={setMode}
             view={searchView} setView={setSearchView}
             wholeWord={wholeWord} setWholeWord={setWholeWord}
+            matchCase={matchCase} setMatchCase={setMatchCase}
+            relatedTerms={relatedTerms} setRelatedTerms={setRelatedTerms}
             onSearch={onSearch}
           />
         )}

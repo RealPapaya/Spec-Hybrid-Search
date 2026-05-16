@@ -1,5 +1,5 @@
 // PreviewPanel — right-side panel: doc meta + score bars + tabbed body
-// (context / match / metadata / related) + action buttons (open / download / copy).
+// (context / match / metadata / document chunks) + action buttons (open / download / copy).
 
 function RelatedTab({ result, results = [], onSelect }) {
   const T = useT();
@@ -239,14 +239,14 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
         <button className={tab === 'context'  ? 'active' : ''} onClick={() => setTab('context')} >{T('tab_context')}</button>
         <button className={tab === 'match'    ? 'active' : ''} onClick={() => setTab('match')}   >{T('tab_match')}</button>
         <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>{T('tab_metadata')}</button>
-        <button className={tab === 'related'  ? 'active' : ''} onClick={() => setTab('related')} >{T('tab_related')}</button>
+        <button className={tab === 'related'  ? 'active' : ''} onClick={() => setTab('related')} >{T('tab_doc_chunks')}</button>
       </div>
 
       <div className="preview-body preview-text">
         {tab === 'context' && <>
           <div className="ctx-block">
             <div className="ctx-label">{T('ctx_preceding')} · {T('page_short')} {result.page - 1}</div>
-            {highlightText(result.context.before, result.highlight)}
+            {highlightText(result.context.before, [])}
           </div>
           <div className="ctx-block match">
             <div className="ctx-label">
@@ -258,16 +258,16 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
                 <span className="ctx-occ-count"> · {result.occurrencesInChunk} {T('matches_n')}</span>
               )}
             </div>
-            {highlightText(result.context.match, result.highlight)}
+            {highlightText(result.context.match, result.matchHighlight || result.highlight)}
           </div>
           <div className="ctx-block">
             <div className="ctx-label">{T('ctx_following')} · {T('page_short')} {result.page + 1}</div>
-            {highlightText(result.context.after, result.highlight)}
+            {highlightText(result.context.after, [])}
           </div>
         </>}
         {tab === 'match' && <>
           <h3 className="section-h">{T('matched_only')}</h3>
-          <div style={{ whiteSpace: 'pre-wrap' }}>{highlightText(result.context.match, result.highlight)}</div>
+          <div style={{ whiteSpace: 'pre-wrap' }}>{highlightText(result.context.match, result.matchHighlight || result.highlight)}</div>
         </>}
         {tab === 'metadata' && (
           <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{metaJson}</pre>

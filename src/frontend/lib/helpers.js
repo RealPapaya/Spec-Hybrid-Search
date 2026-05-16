@@ -4,6 +4,23 @@
 
 function highlightText(text, terms) {
   if (!terms || !terms.length) return text;
+  if (typeof terms[0] === 'object') {
+    const spans = terms
+      .filter(s => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
+      .sort((a, b) => a.start - b.start || b.end - a.end);
+    const parts = [];
+    let cursor = 0;
+    spans.forEach((span, i) => {
+      const start = Math.max(0, Math.min(text.length, span.start));
+      const end = Math.max(start, Math.min(text.length, span.end));
+      if (start < cursor) return;
+      if (start > cursor) parts.push(<React.Fragment key={'t' + i}>{text.slice(cursor, start)}</React.Fragment>);
+      parts.push(<mark key={'m' + i}>{text.slice(start, end)}</mark>);
+      cursor = end;
+    });
+    if (cursor < text.length) parts.push(<React.Fragment key="tail">{text.slice(cursor)}</React.Fragment>);
+    return parts;
+  }
   const sorted = [...terms].sort((a, b) => b.length - a.length);
   const escaped = sorted.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const pattern = new RegExp('(' + escaped.join('|') + ')', 'i');

@@ -55,7 +55,7 @@ function ResultRow({ result, index, selected, onSelect, tagsData = { customTags:
         <div className="result-row3">
           {result.section && <span className="section">{result.section}</span>}
         </div>
-        <div className="excerpt">{highlightText(result.excerpt, result.highlight)}</div>
+        <div className="excerpt">{highlightText(result.excerpt, result.excerptHighlight || result.highlight)}</div>
         <div className="result-row4">
           <span className="scoreitem" data-tip={T('score_bm25_tip')}><span className="dot bm"></span>BM25 {(result.bm25 || 0).toFixed(2)}</span>
           <span className="scoreitem" data-tip={T('score_cos_tip')}><span className="dot sem"></span>cos {(result.semantic || 0).toFixed(2)}</span>
@@ -74,7 +74,7 @@ function OccurrenceRow({ result, index, selected, onSelect }) {
       {result.type && <FileTypeIcon type={result.type} />}
       <span className="occ-spec" title={result.specShort}>{result.spec}</span>
       <span className="occ-page">{result.page ? ('p.' + result.page) : '—'}</span>
-      <span className="occ-snippet">{highlightText(result.snippet || result.excerpt, result.highlight)}</span>
+      <span className="occ-snippet">{highlightText(result.snippet || result.excerpt, result.snippetHighlight || result.highlight)}</span>
     </div>
   );
 }
