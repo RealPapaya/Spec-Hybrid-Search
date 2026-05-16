@@ -233,6 +233,11 @@ body {
   transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 .iconbtn:hover { background: var(--bg-hover); color: var(--fg); border-color: var(--border-strong); }
+.iconbtn.on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elev));
+}
 .iconbtn:disabled {
   opacity: 0.55;
   cursor: default;
