@@ -37,16 +37,16 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bo
       </button>
       <button
         className="iconbtn"
-        onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-        data-tip="切換語言 / Switch language"
+        onClick={() => setLang(getNextLang(lang))}
+        data-tip={T('language_switch_tip')}
         style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, minWidth: 38, letterSpacing: 0 }}
       >
-        {lang === 'en' ? '繁中' : 'EN'}
+        {T('lang_other')}
       </button>
       <button className="iconbtn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} data-tip={T('toggle_theme')}>
         {theme === 'dark' ? <Icon.sun /> : <Icon.moon />}
       </button>
-      <button className="iconbtn iconbtn-settings" onClick={onOpenPrefs} data-tip={lang === 'zh' ? '偏好設定' : 'Settings'}>
+      <button className="iconbtn iconbtn-settings" onClick={onOpenPrefs} data-tip={T('settings')}>
         <Icon.settings />
       </button>
     </div>

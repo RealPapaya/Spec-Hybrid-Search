@@ -7,8 +7,10 @@ var DICT = {
     brand_sub: "",
     index_status: "ready",
     toggle_theme: "Toggle theme",
+    settings: "Settings",
     lang_label: "EN",
     lang_other: "繁",
+    language_switch_tip: "Switch language",
 
     // search row
     search_placeholder: 'Search your documents...',
@@ -16,6 +18,12 @@ var DICT = {
     mode_hybrid: "Hybrid",
     mode_semantic: "Semantic",
     btn_search: "Search",
+    search_loading: "Searching...",
+    search_failed: "Search failed",
+    search_empty_title: "Search your documents",
+    search_empty_hint: "Drop PDF, DOCX, XLSX, or PPTX files into the watched_docs folder, then type a query above",
+    coming_soon: "Coming soon",
+    coming_soon_short: "(soon)",
 
     // filters
     f_vendor: "Document",
@@ -90,6 +98,17 @@ var DICT = {
         docs_no_tags:    "No tags yet",
     docs_tags_assigned: "Assigned",
     docs_tags_available: "Available",
+    docs_index_updating: "Updating index",
+    docs_indexing: "indexing",
+    docs_delete_tag_confirm: 'Delete tag "{name}"?',
+    docs_apply_folder_tags_confirm: "Apply folder tags to all files?",
+    docs_folder_tags_applied: "Applied {changedDocs} files, created {created} tags",
+    docs_remove_all_tags_confirm: "Remove all tags and all file assignments?",
+    docs_all_tags_removed: "Removed all tags",
+    docs_files_count: "files",
+    docs_color: "Color",
+    docs_new_tag_short: "New tag...",
+    docs_tag_name_placeholder: "Tag name...",
 
     // confirm dialog
     confirm_cancel:  "Cancel",
@@ -106,6 +125,13 @@ var DICT = {
     bookmarks_remove:   "Remove",
     bookmarks_open:     "open",
     bookmarks_clear_all: "Clear all",
+    bookmarks_clear_confirm: "Clear all {count} bookmarks?",
+    bookmarks_filter: "Filter bookmarks...",
+    bookmarks_count_label: "bookmarks",
+    bookmarks_no_matches: "No matches",
+    bookmarks_no_matches_hint: "Try a different filter",
+    bookmark_add: "Bookmark",
+    bookmark_added: "Bookmarked",
 
     // statusbar
     sb_connected: "connected · localhost:8000",
@@ -117,6 +143,13 @@ var DICT = {
 
     // tweaks
     tw_layout: "Layout",
+    tw_language: "Language",
+    tw_interface_language: "Interface language",
+    tw_zh: "繁中",
+    tw_appearance: "Appearance",
+    tw_theme: "Theme",
+    tw_light: "Light",
+    tw_dark: "Dark",
     tw_filters_pos: "Filters position",
     tw_sidebar: "Sidebar",
     tw_topbar: "Top bar",
@@ -128,6 +161,10 @@ var DICT = {
     tw_theming: "Theming",
     tw_accent: "Accent color",
     tw_typography: "Typography",
+    tw_body_font: "Body font (Sans)",
+    tw_mono_font: "Monospace font",
+    tw_display_font: "Heading font (Display)",
+    tw_system_font: "System",
     tw_highlight: "Highlight style",
     tw_yellow: "Yellow",
     tw_underline: "Underline",
@@ -141,14 +178,22 @@ var DICT = {
     brand_sub: "",
     index_status: "就緒",
     toggle_theme: "切換主題",
+    settings: "偏好設定",
     lang_label: "繁",
     lang_other: "EN",
+    language_switch_tip: "切換語言",
 
     search_placeholder: '搜尋你的文件...',
     mode_keyword: "關鍵字",
     mode_hybrid: "混合",
     mode_semantic: "語意",
     btn_search: "搜尋",
+    search_loading: "搜尋中...",
+    search_failed: "搜尋失敗",
+    search_empty_title: "開始搜尋您的文件",
+    search_empty_hint: "將 PDF、DOCX、XLSX、PPTX 放入 watched_docs 資料夾，輸入關鍵字即可搜尋",
+    coming_soon: "實作中",
+    coming_soon_short: "(實作中)",
 
     f_vendor: "文件",
     f_explorer: "搜尋到的檔案",
@@ -219,6 +264,17 @@ var DICT = {
         docs_no_tags:    "尚無標籤",
     docs_tags_assigned: "已套用",
     docs_tags_available: "可選用",
+    docs_index_updating: "更新索引中",
+    docs_indexing: "索引中",
+    docs_delete_tag_confirm: "確定要刪除標籤「{name}」？",
+    docs_apply_folder_tags_confirm: "確定要依子目錄套用標籤？",
+    docs_folder_tags_applied: "已套用 {changedDocs} 份檔案，新增 {created} 個標籤",
+    docs_remove_all_tags_confirm: "確定要刪除全部標籤與所有檔案指派？",
+    docs_all_tags_removed: "已移除全部標籤",
+    docs_files_count: "份文件",
+    docs_color: "顏色",
+    docs_new_tag_short: "新增標籤...",
+    docs_tag_name_placeholder: "標籤名稱...",
 
     // confirm dialog
     confirm_cancel:  "取消",
@@ -234,6 +290,13 @@ var DICT = {
     bookmarks_remove:   "移除",
     bookmarks_open:     "開啟",
     bookmarks_clear_all: "全部清空",
+    bookmarks_clear_confirm: "確定要清空全部 {count} 筆收藏？",
+    bookmarks_filter: "篩選收藏...",
+    bookmarks_count_label: "筆收藏",
+    bookmarks_no_matches: "無符合結果",
+    bookmarks_no_matches_hint: "請嘗試不同關鍵字",
+    bookmark_add: "加入收藏",
+    bookmark_added: "已加入收藏",
 
     sb_connected: "已連線 · localhost:8000",
     sb_mode: "模式：",
@@ -243,6 +306,13 @@ var DICT = {
     sb_chunks: "區塊",
 
     tw_layout: "版面",
+    tw_language: "語言",
+    tw_interface_language: "介面語言",
+    tw_zh: "繁中",
+    tw_appearance: "外觀",
+    tw_theme: "主題",
+    tw_light: "淺色",
+    tw_dark: "深色",
     tw_filters_pos: "篩選器位置",
     tw_sidebar: "側邊欄",
     tw_topbar: "頂部列",
@@ -254,6 +324,10 @@ var DICT = {
     tw_theming: "主題樣式",
     tw_accent: "強調色",
     tw_typography: "字體",
+    tw_body_font: "內文字型 (Sans)",
+    tw_mono_font: "等寬字型 (Mono)",
+    tw_display_font: "標題字型 (Display)",
+    tw_system_font: "系統字型",
     tw_highlight: "標示樣式",
     tw_yellow: "黃底",
     tw_underline: "底線",
@@ -265,8 +339,35 @@ var DICT = {
   }
 };
 
+var LANG_META = {
+  en: { htmlLang: 'en', locale: 'en-US', next: 'zh' },
+  zh: { htmlLang: 'zh-TW', locale: 'zh-TW', next: 'en' },
+};
+
+function getLangMeta(lang) {
+  return LANG_META[lang] || LANG_META.en;
+}
+
+function getHtmlLang(lang) {
+  return getLangMeta(lang).htmlLang;
+}
+
+function getLocale(lang) {
+  return getLangMeta(lang).locale;
+}
+
+function getNextLang(lang) {
+  return getLangMeta(lang).next;
+}
+
+function translate(lang, key, vars) {
+  const text = DICT[lang]?.[key] ?? DICT.en?.[key] ?? key;
+  if (!vars) return text;
+  return String(text).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
+}
+
 var LangCtx = React.createContext('en');
 function useT() {
   const lang = React.useContext(LangCtx);
-  return (key) => DICT[lang]?.[key] ?? DICT['en']?.[key] ?? key;
+  return React.useCallback((key, vars) => translate(lang, key, vars), [lang]);
 }

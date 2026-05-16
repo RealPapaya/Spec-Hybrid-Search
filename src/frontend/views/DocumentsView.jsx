@@ -103,8 +103,8 @@ function canOpenDoc(doc) {
 
 function indexStatusLabel(doc, lang) {
   if (isDocIndexed(doc)) return '';
-  if ((doc.chunk_count || 0) > 0) return lang === 'zh' ? '更新索引中' : 'Updating index';
-  return lang === 'zh' ? '索引中' : 'indexing';
+  if ((doc.chunk_count || 0) > 0) return translate(lang, 'docs_index_updating');
+  return translate(lang, 'docs_indexing');
 }
 
 function FileActionPanel({ doc, tagsData, setTagsData, onOpen, allowTagEdit = true }) {
@@ -337,6 +337,9 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const [tagMode, setTagMode] = React.useState('manual');
   const [tagApplyMessage, setTagApplyMessage] = React.useState('');
   const [newTagName, setNewTagName] = React.useState('');
+  const [newTagColor, setNewTagColor] = React.useState('#6366f1');
+  const [addingTag, setAddingTag] = React.useState(false);
+  const newTagInputRef = React.useRef(null);
   const [filterText, setFilterText] = React.useState('');
 
   const fetchDocs = React.useCallback(() => {
@@ -360,6 +363,10 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     return () => clearInterval(timer);
   }, [docs, fetchDocs]);
 
+  React.useEffect(() => {
+    if (addingTag && newTagInputRef.current) newTagInputRef.current.focus();
+  }, [addingTag]);
+
   // Trigger a background re-index, then refresh the document list.
   const handleRefresh = React.useCallback(async () => {
     if (refreshing) return;
@@ -380,15 +387,17 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
 
   const openDoc = (doc) => window.open('/api/file/' + encodeURIComponent(doc.doc_id), '_blank', 'noopener');
 
-  const createTag = React.useCallback((name) => {
+  const createTag = React.useCallback((name, color) => {
     const cleanName = name.trim();
     if (!cleanName) return;
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-    const color = TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
-    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name: cleanName, color }] };
+    const tagColor = color || TAG_COLORS[tagsData.customTags.length % TAG_COLORS.length];
+    const nd = { ...tagsData, customTags: [...tagsData.customTags, { id, name: cleanName, color: tagColor }] };
     setTagsData(nd);
     saveTagsData(nd);
     setNewTagName('');
+    setNewTagColor('#6366f1');
+    setAddingTag(false);
   }, [tagsData, setTagsData]);
 
   const updateTag = React.useCallback((tagId, patch) => {
@@ -403,9 +412,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
   const deleteTag = React.useCallback(async (tagId) => {
     const tag = tagsData.customTags.find(t => t.id === tagId);
     if (!tag) return;
-    const msg = lang === 'zh'
-      ? `確定要刪除標籤「${tag.name}」？`
-      : `Delete tag "${tag.name}"?`;
+    const msg = T('docs_delete_tag_confirm', { name: tag.name });
     const ok = await confirm(msg, { danger: true });
     if (!ok) return;
 
@@ -421,12 +428,10 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     };
     setTagsData(nd);
     saveTagsData(nd);
-  }, [tagsData, setTagsData, lang, confirm]);
+  }, [tagsData, setTagsData, T, confirm]);
 
   const applyFolderTags = React.useCallback(async () => {
-    const msg = lang === 'zh'
-      ? '確定要依子目錄套用標籤？'
-      : 'Apply folder tags to all files?';
+    const msg = T('docs_apply_folder_tags_confirm');
     const ok = await confirm(msg);
     if (!ok) return;
 
@@ -464,27 +469,23 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
     const nd = { ...tagsData, customTags, assignments };
     setTagsData(nd);
     saveTagsData(nd);
-    setTagApplyMessage(lang === 'zh'
-      ? `已套用 ${changedDocs} 份檔案，新增 ${created} 個標籤`
-      : `Applied ${changedDocs} files, created ${created} tags`);
-  }, [docs, tagsData, setTagsData, lang, confirm]);
+    setTagApplyMessage(T('docs_folder_tags_applied', { changedDocs, created }));
+  }, [docs, tagsData, setTagsData, T, confirm]);
 
   const removeAllTags = React.useCallback(async () => {
-    const msg = lang === 'zh'
-      ? '確定要刪除全部標籤與所有檔案指派？'
-      : 'Remove all tags and all file assignments?';
+    const msg = T('docs_remove_all_tags_confirm');
     const ok = await confirm(msg, { danger: true });
     if (!ok) return;
 
     const nd = { ...tagsData, customTags: [], assignments: {} };
     setTagsData(nd);
     saveTagsData(nd);
-    setTagApplyMessage(lang === 'zh' ? '已移除全部標籤' : 'Removed all tags');
-  }, [tagsData, setTagsData, lang, confirm]);
+    setTagApplyMessage(T('docs_all_tags_removed'));
+  }, [tagsData, setTagsData, T, confirm]);
 
   const tree = React.useMemo(() => {
     const base = watchedDir ? watchedDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' : null;
-    const root = { name: lang === 'zh' ? '全部檔案' : 'All Files', children: {}, files: [] };
+    const root = { name: T('docs_all_files'), children: {}, files: [] };
     filtered.forEach(doc => {
       const fullPath = doc.filepath.replace(/\\/g, '/');
       let rel = (base && fullPath.startsWith(base)) ? fullPath.slice(base.length) : doc.filename;
@@ -498,7 +499,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
       node.files.push(doc);
     });
     return root;
-  }, [filtered, watchedDir, lang]);
+  }, [filtered, watchedDir, T]);
 
   return (
     <section className="docs-view">
@@ -524,7 +525,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
         </button>
         <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }}></div>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-faint)' }}>
-          {filtered.length}{docs.length !== filtered.length ? ' / ' + docs.length : ''} {lang === 'zh' ? '份文件' : 'files'}
+          {filtered.length}{docs.length !== filtered.length ? ' / ' + docs.length : ''} {T('docs_files_count')}
         </span>
         <div className="docs-view-toggle">
           <button className={viewMode === 'list' ? 'on' : ''} onClick={() => setViewMode('list')} data-tip={T('docs_list')}><Icon.rows /></button>
@@ -560,7 +561,7 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
                     type="color"
                     value={tag.color}
                     onChange={e => updateTag(tag.id, { color: e.target.value })}
-                    data-tip={lang === 'zh' ? '顏色' : 'Color'}
+                    data-tip={T('docs_color')}
                   />
                   <input
                     className="tag-editor-name"
@@ -581,17 +582,34 @@ function DocumentsView({ onBack, tagsData, setTagsData, watchedDir }) {
                 </div>
               );
             })}
-            <div className="new-tag-row" style={{ paddingTop: 8 }}>
-              <input
-                value={newTagName}
-                onChange={e => setNewTagName(e.target.value)}
-                placeholder={lang === 'zh' ? '新增標籤...' : 'New tag...'}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') createTag(newTagName);
-                  e.stopPropagation();
-                }}
-              />
-              <button onClick={() => createTag(newTagName)}>{T('docs_add')}</button>
+            <div className="new-tag-row">
+              {!addingTag ? (
+                <button className="new-tag-trigger" onClick={() => setAddingTag(true)}>
+                  <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>
+                  {T('docs_add_tag')}
+                </button>
+              ) : (
+                <div className="new-tag-form">
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={e => setNewTagColor(e.target.value)}
+                  />
+                  <input
+                    ref={newTagInputRef}
+                    type="text"
+                    value={newTagName}
+                    onChange={e => setNewTagName(e.target.value)}
+                    placeholder={T('docs_tag_name_placeholder')}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') createTag(newTagName, newTagColor);
+                      if (e.key === 'Escape') { setAddingTag(false); setNewTagName(''); }
+                      e.stopPropagation();
+                    }}
+                  />
+                  <button className="add-btn" onClick={() => createTag(newTagName, newTagColor)}>{T('docs_add')}</button>
+                </div>
+              )}
             </div>
           </div>
         </div>

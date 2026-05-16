@@ -29,9 +29,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
   };
 
   const clearAll = async () => {
-    const msg = lang === 'zh'
-      ? `確定要清空全部 ${allItems.length} 筆收藏？`
-      : `Clear all ${allItems.length} bookmarks?`;
+    const msg = T('bookmarks_clear_confirm', { count: allItems.length });
     const ok = await confirm(msg, { danger: true });
     if (ok) {
       setBookmarks({});
@@ -52,7 +50,7 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
 
   const formatDate = (ms) => {
     if (!ms) return '';
-    try { return new Date(ms).toLocaleString(lang === 'zh' ? 'zh-TW' : 'en-US'); }
+    try { return new Date(ms).toLocaleString(getLocale(lang)); }
     catch(e) { return ''; }
   };
 
@@ -68,13 +66,13 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
           <input
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
-            placeholder={lang === 'zh' ? '篩選收藏…' : 'Filter bookmarks…'}
+            placeholder={T('bookmarks_filter')}
             style={{ fontSize: 12 }}
           />
         </div>
         <span className="spacer"></span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-faint)' }}>
-          {items.length}{allItems.length !== items.length ? ' / ' + allItems.length : ''} {lang === 'zh' ? '筆收藏' : 'bookmarks'}
+          {items.length}{allItems.length !== items.length ? ' / ' + allItems.length : ''} {T('bookmarks_count_label')}
         </span>
         {allItems.length > 0 && (
           <>
@@ -99,8 +97,8 @@ function BookmarksView({ bookmarks, setBookmarks, onBack }) {
           <div className="empty">
             <div>
               <div className="ico"><Icon.search /></div>
-              <div className="title">{lang === 'zh' ? '無符合結果' : 'No matches'}</div>
-              <div className="hint">{lang === 'zh' ? '請嘗試不同關鍵字' : 'Try a different filter'}</div>
+              <div className="title">{T('bookmarks_no_matches')}</div>
+              <div className="hint">{T('bookmarks_no_matches_hint')}</div>
             </div>
           </div>
         ) : (

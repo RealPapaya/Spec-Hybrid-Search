@@ -3,7 +3,6 @@
 
 function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
   const T = useT();
-  const lang = React.useContext(LangCtx);
   const [tab, setTab] = React.useState('context');
   const [flash, setFlash] = React.useState('');
 
@@ -105,9 +104,7 @@ function PreviewPanel({ result, bookmarks = {}, setBookmarks = () => {} }) {
         <button
           className="iconbtn"
           onClick={toggleBookmark}
-          data-tip={isBookmarked
-            ? (lang === 'zh' ? '已加入收藏' : 'Bookmarked')
-            : (lang === 'zh' ? '加入收藏'   : 'Bookmark')}
+          data-tip={isBookmarked ? T('bookmark_added') : T('bookmark_add')}
           style={isBookmarked ? { color: 'var(--accent)' } : null}
         >
           {isBookmarked ? <Icon.bookmarkFill /> : <Icon.bookmark />}

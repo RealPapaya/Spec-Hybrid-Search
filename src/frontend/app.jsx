@@ -193,7 +193,7 @@ function App() {
     r.dataset.fontDisplay = tweaks.fontDisplay;
     r.dataset.card        = tweaks.cardMode;
     r.dataset.highlight   = tweaks.highlight;
-    r.lang                = lang === 'zh' ? 'zh-TW' : 'en';
+    r.lang                = getHtmlLang(lang);
   }, [theme, lang, tweaks]);
 
   const allResults = results;
@@ -259,15 +259,16 @@ function App() {
 
   const selected   = filtered.find(r => r.id === selectedId) || null;
   const openPrefs  = () => window.postMessage({ type: '__activate_edit_mode' }, '*');
-  const prefsTitle = lang === 'zh' ? '偏好設定' : 'Preferences';
+  const T = React.useCallback((key, vars) => translate(lang, key, vars), [lang]);
+  const prefsTitle = T('settings');
 
   const inBookmarks = view === 'bookmarks';
   const inDocuments = view === 'documents';
   const inSearch    = !inBookmarks && !inDocuments;
 
   return (
-    <ConfirmDialogProvider>
     <LangCtx.Provider value={lang}>
+    <ConfirmDialogProvider>
       <div className="app">
         <Topbar
           theme={theme} setTheme={setTheme}
@@ -296,22 +297,20 @@ function App() {
           ) : loading ? (
             <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', fontSize: 15 }}>
               <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              {lang === 'zh' ? '搜尋中...' : 'Searching...'}
+              {T('search_loading')}
             </div>
           ) : error ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--fg2)', fontSize: 15 }}>
               <div style={{ fontSize: 32 }}>⚠</div>
-              <div style={{ fontWeight: 600 }}>{lang === 'zh' ? '搜尋失敗' : 'Search failed'}</div>
+              <div style={{ fontWeight: 600 }}>{T('search_failed')}</div>
               <div style={{ fontSize: 13, opacity: 0.7 }}>{error}</div>
             </div>
           ) : !hasSearched ? (
             <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: 'var(--fg2)', textAlign: 'center', padding: '0 32px' }}>
               <div style={{ fontSize: 48, opacity: 0.3 }}>🔍</div>
-              <div style={{ fontSize: 18, fontWeight: 600, opacity: 0.6 }}>{lang === 'zh' ? '開始搜尋您的文件' : 'Search your documents'}</div>
+              <div style={{ fontSize: 18, fontWeight: 600, opacity: 0.6 }}>{T('search_empty_title')}</div>
               <div style={{ fontSize: 13, opacity: 0.45, maxWidth: 320 }}>
-                {lang === 'zh'
-                  ? '將 PDF、DOCX、XLSX、PPTX 放入 watched_docs 資料夾，輸入關鍵字即可搜尋'
-                  : 'Drop PDF, DOCX, XLSX, or PPTX files into the watched_docs folder, then type a query above'}
+                {T('search_empty_hint')}
               </div>
             </div>
           ) : (
@@ -342,62 +341,62 @@ function App() {
 
         <TweaksPanel title={prefsTitle}>
 
-          <TweakSection label={lang === 'zh' ? '語言' : 'Language'}>
+          <TweakSection label={T('tw_language')}>
             <TweakRadio
-              label={lang === 'zh' ? '介面語言' : 'Interface language'}
+              label={T('tw_interface_language')}
               value={lang}
               onChange={v => setLang(v)}
-              options={[{ value: 'en', label: 'English' }, { value: 'zh', label: '繁中' }]}
+              options={[{ value: 'en', label: 'English' }, { value: 'zh', label: T('tw_zh') }]}
             />
           </TweakSection>
 
-          <TweakSection label={lang === 'zh' ? '外觀' : 'Appearance'}>
+          <TweakSection label={T('tw_appearance')}>
             <TweakRadio
-              label={lang === 'zh' ? '主題' : 'Theme'}
+              label={T('tw_theme')}
               value={theme}
               onChange={v => setTheme(v)}
               options={[
-                { value: 'light', label: lang === 'zh' ? '淺色' : 'Light' },
-                { value: 'dark',  label: lang === 'zh' ? '深色' : 'Dark'  },
+                { value: 'light', label: T('tw_light') },
+                { value: 'dark',  label: T('tw_dark')  },
               ]}
             />
             <TweakSelect
-              label={lang === 'zh' ? '強調色' : 'Accent color'}
+              label={T('tw_accent')}
               value={tweaks.accent}
               onChange={v => setTweak('accent', v)}
               options={[
-                { value: 'indigo',  label: lang === 'zh' ? '靛藍 (預設)' : 'Indigo (default)' },
-                { value: 'emerald', label: lang === 'zh' ? '翠綠'        : 'Emerald'           },
-                { value: 'amber',   label: lang === 'zh' ? '琥珀'        : 'Amber'             },
-                { value: 'slate',   label: lang === 'zh' ? '石板'        : 'Slate'             },
+                { value: 'indigo',  label: T('tw_indigo') },
+                { value: 'emerald', label: T('tw_emerald') },
+                { value: 'amber',   label: T('tw_amber') },
+                { value: 'slate',   label: T('tw_slate') },
               ]}
             />
             <TweakRadio
-              label={lang === 'zh' ? '標示樣式' : 'Highlight style'}
+              label={T('tw_highlight')}
               value={tweaks.highlight}
               onChange={v => setTweak('highlight', v)}
               options={[
-                { value: 'yellow',    label: lang === 'zh' ? '黃底' : 'Yellow'    },
-                { value: 'underline', label: lang === 'zh' ? '底線' : 'Underline' },
-                { value: 'bold',      label: lang === 'zh' ? '粗體' : 'Bold'      },
+                { value: 'yellow',    label: T('tw_yellow') },
+                { value: 'underline', label: T('tw_underline') },
+                { value: 'bold',      label: T('tw_bold') },
               ]}
             />
           </TweakSection>
 
-            <TweakSection label={lang === 'zh' ? '字體' : 'Typography'}>
+            <TweakSection label={T('tw_typography')}>
             <TweakSelect
-              label={lang === 'zh' ? '內文字型 (Sans)' : 'Body font (Sans)'}
+              label={T('tw_body_font')}
               value={tweaks.fontSans}
               onChange={v => setTweak('fontSans', v)}
               options={[
                 { value: 'inter',          label: 'Inter' },
                 { value: 'ibm-plex-sans',  label: 'IBM Plex Sans' },
                 { value: 'jetbrains-mono', label: 'JetBrains Mono' },
-                { value: 'system',         label: lang === 'zh' ? '系統字型' : 'System' },
+                { value: 'system',         label: T('tw_system_font') },
               ]}
             />
             <TweakSelect
-              label={lang === 'zh' ? '等寬字型 (Mono)' : 'Monospace font'}
+              label={T('tw_mono_font')}
               value={tweaks.fontMono}
               onChange={v => setTweak('fontMono', v)}
               options={[
@@ -408,7 +407,7 @@ function App() {
               ]}
             />
             <TweakSelect
-              label={lang === 'zh' ? '標題字型 (Display)' : 'Heading font (Display)'}
+              label={T('tw_display_font')}
               value={tweaks.fontDisplay}
               onChange={v => setTweak('fontDisplay', v)}
               options={[
@@ -416,46 +415,46 @@ function App() {
                 { value: 'ibm-plex-sans',  label: 'IBM Plex Sans' },
                 { value: 'source-serif',   label: 'Source Serif 4' },
                 { value: 'jetbrains-mono', label: 'JetBrains Mono' },
-                { value: 'system',         label: lang === 'zh' ? '系統字型' : 'System' },
+                { value: 'system',         label: T('tw_system_font') },
               ]}
             />
           </TweakSection>
 
-          <TweakSection label={lang === 'zh' ? '版面' : 'Layout'}>
+          <TweakSection label={T('tw_layout')}>
             <TweakRadio
-              label={lang === 'zh' ? '篩選器' : 'Filters'}
+              label={T('tw_filters_pos')}
               value={tweaks.layout}
               onChange={v => setTweak('layout', v)}
               options={[
-                { value: 'sidebar',    label: lang === 'zh' ? '側欄' : 'Sidebar' },
-                { value: 'topfilters', label: lang === 'zh' ? '頂部' : 'Top bar' },
+                { value: 'sidebar',    label: T('tw_sidebar') },
+                { value: 'topfilters', label: T('tw_topbar') },
               ]}
             />
             <TweakRadio
-              label={lang === 'zh' ? '卡片樣式' : 'Card style'}
+              label={T('tw_result_card')}
               value={tweaks.cardMode}
               onChange={v => { setTweak('cardMode', v); setCardMode(v); }}
               options={[
-                { value: 'detailed', label: lang === 'zh' ? '詳細' : 'Detailed' },
-                { value: 'compact',  label: lang === 'zh' ? '精簡' : 'Compact'  },
+                { value: 'detailed', label: T('layout_detailed') },
+                { value: 'compact',  label: T('layout_compact')  },
               ]}
             />
             <TweakSelect
-              label={lang === 'zh' ? '密度' : 'Density'}
+              label={T('tw_density')}
               value={tweaks.density}
               onChange={v => setTweak('density', v)}
               options={[
-                { value: 'compact',  label: lang === 'zh' ? '精簡' : 'Compact'  },
-                { value: 'balanced', label: lang === 'zh' ? '平衡' : 'Balanced' },
-                { value: 'spacious', label: lang === 'zh' ? '寬鬆' : 'Spacious' },
+                { value: 'compact',  label: T('tw_density_compact') },
+                { value: 'balanced', label: T('tw_density_balanced') },
+                { value: 'spacious', label: T('tw_density_spacious') },
               ]}
             />
           </TweakSection>
 
         </TweaksPanel>
       </div>
-    </LangCtx.Provider>
     </ConfirmDialogProvider>
+    </LangCtx.Provider>
   );
 }
 
