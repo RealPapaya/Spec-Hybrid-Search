@@ -199,23 +199,21 @@ function PreviewPanel({ result, results = [], onSelect, bookmarks = {}, setBookm
 
   return (
     <section className="preview">
-      <div className="preview-head">
-        <div className="crumbs"></div>
-        <button
-          className="iconbtn"
-          onClick={toggleBookmark}
-          data-tip={isBookmarked ? T('bookmark_added') : T('bookmark_add')}
-          style={isBookmarked ? { color: 'var(--accent)' } : null}
-        >
-          {isBookmarked ? <Icon.bookmarkFill /> : <Icon.bookmark />}
-        </button>
-        <button className="iconbtn" onClick={openFile} data-tip={result.filepath}>
-          <Icon.external /> {T('open')}
-        </button>
-      </div>
-
       <div className="preview-meta">
-        <div className="metaitem"><span className="l">{T('meta_doc')}</span><span className="v mono">{result.specShort}</span></div>
+        <div className="metaitem preview-doc-item"><span className="l">{T('meta_doc')}</span><span className="v mono">{result.specShort}</span></div>
+        <div className="preview-meta-actions">
+          <button
+            className="iconbtn"
+            onClick={toggleBookmark}
+            data-tip={isBookmarked ? T('bookmark_added') : T('bookmark_add')}
+            style={isBookmarked ? { color: 'var(--accent)' } : null}
+          >
+            {isBookmarked ? <Icon.bookmarkFill /> : <Icon.bookmark />}
+          </button>
+          <button className="iconbtn" onClick={openFile} data-tip={result.filepath}>
+            <Icon.external /> {T('open')}
+          </button>
+        </div>
         <div className="metaitem align-right"><span className="l">{T('meta_page')}</span><span className="v mono">{result.page}</span></div>
       </div>
 

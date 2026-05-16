@@ -1152,43 +1152,28 @@ body {
   overflow: hidden;
   min-width: 0;
 }
-.preview-head {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  height: 38px;
-  gap: 10px;
-  background: var(--bg-elev);
-}
-.preview-head .crumbs {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--fg-muted);
-  min-width: 0;
-}
-.preview-head .crumbs .crumb {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.preview-head .crumbs .crumb.last { color: var(--fg); font-weight: 600; }
-.preview-head .crumbs .arr { color: var(--fg-faint); flex-shrink: 0; }
-
 .preview-meta {
   padding: 10px 16px 12px;
   border-bottom: 1px solid var(--border);
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px 18px;
+  gap: 8px 18px;
+}
+.preview-doc-item {
+  flex: 1;
+}
+.preview-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: 12px;
 }
 .metaitem.align-right {
-  text-align: right;
+  flex-basis: 100%;
+  text-align: left;
 }
 .metaitem {
   display: flex;
