@@ -1,10 +1,14 @@
-// Topbar — brand mark, status indicator, view-mode buttons, language / theme /
-// settings toggles.
+// Topbar — brand mark, integrated search input, view-mode buttons, settings.
 
-function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bookmarkCount }) {
+function Topbar({
+  onOpenPrefs, view, setView, bookmarkCount,
+  query, setQuery, onSearch,
+  advancedOpen, setAdvancedOpen,
+}) {
   const T = useT();
   const inBookmarks = view === 'bookmarks';
   const inDocuments = view === 'documents';
+  const inSearch = !inBookmarks && !inDocuments;
   return (
     <div className="topbar">
       <div className="brand">
@@ -14,7 +18,33 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bo
           <span className="brand-sub">{T('brand_sub')}</span>
         </div>
       </div>
-      <div className="spacer"></div>
+
+      {inSearch && (
+        <div className="topbar-search">
+          <div className="searchbox">
+            <div className="glass"><Icon.search /></div>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') onSearch(); }}
+              placeholder={T('search_placeholder')}
+            />
+          </div>
+          <button
+            className={'advanced-btn' + (advancedOpen ? ' active' : '')}
+            onClick={() => setAdvancedOpen(open => !open)}
+            type="button"
+          >
+            {T('advanced')}
+          </button>
+          <button className="searchbtn" onClick={onSearch}>
+            <Icon.search /> {T('btn_search')}
+          </button>
+        </div>
+      )}
+
+      {!inSearch && <div className="spacer"></div>}
+
       <button
         className="iconbtn"
         onClick={() => setView(inDocuments ? 'search' : 'documents')}
@@ -22,7 +52,7 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bo
         style={inDocuments ? { color: 'var(--accent)' } : null}
       >
         <Icon.tag />
-        <span style={{ fontSize: '11px' }}>{T('docs_nav')}</span>
+        <span style={{ fontSize: '14px' }}>{T('docs_nav')}</span>
       </button>
       <button
         className="iconbtn"
@@ -31,20 +61,9 @@ function Topbar({ theme, setTheme, lang, setLang, onOpenPrefs, view, setView, bo
         style={inBookmarks ? { color: 'var(--accent)' } : null}
       >
         {inBookmarks ? <Icon.bookmarkFill /> : <Icon.bookmark />}
-        <span style={{ fontSize: '11px' }}>
+        <span style={{ fontSize: '14px' }}>
           {T('bookmarks_nav')}{bookmarkCount > 0 ? ` · ${bookmarkCount}` : ''}
         </span>
-      </button>
-      <button
-        className="iconbtn"
-        onClick={() => setLang(getNextLang(lang))}
-        data-tip={T('language_switch_tip')}
-        style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, minWidth: 38, letterSpacing: 0 }}
-      >
-        {T('lang_other')}
-      </button>
-      <button className="iconbtn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} data-tip={T('toggle_theme')}>
-        {theme === 'dark' ? <Icon.sun /> : <Icon.moon />}
       </button>
       <button className="iconbtn iconbtn-settings" onClick={onOpenPrefs} data-tip={T('settings')}>
         <Icon.settings />

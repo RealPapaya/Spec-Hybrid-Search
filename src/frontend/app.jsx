@@ -23,6 +23,7 @@ function App() {
     capped: false, offset: 0, limit: null,
   });
   const [loadingMore, setLoadingMore] = React.useState(false);
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
 
   // Tags data (custom tags + assignments, persisted in localStorage)
   const [tagsData, setTagsData] = React.useState(loadTagsData);
@@ -332,22 +333,21 @@ function App() {
     <ConfirmDialogProvider>
       <div className="app">
         <Topbar
-          theme={theme} setTheme={setTheme}
-          lang={lang} setLang={setLang}
           onOpenPrefs={openPrefs}
           status={status}
           view={view} setView={setView}
           bookmarkCount={bookmarkCount}
+          query={query} setQuery={setQuery}
+          onSearch={onSearch}
+          advancedOpen={advancedOpen} setAdvancedOpen={setAdvancedOpen}
         />
-        {inSearch && (
+        {inSearch && advancedOpen && (
           <SearchRow
-            query={query} setQuery={setQuery}
             mode={mode} setMode={setMode}
             view={searchView} setView={setSearchView}
             wholeWord={wholeWord} setWholeWord={setWholeWord}
             matchCase={matchCase} setMatchCase={setMatchCase}
             relatedTerms={relatedTerms} setRelatedTerms={setRelatedTerms}
-            onSearch={onSearch}
           />
         )}
         {inSearch && <TopFilters filters={filters} setFilters={setFilters} allResults={allResults} />}
